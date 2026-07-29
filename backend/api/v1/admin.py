@@ -339,7 +339,7 @@ def create_rider():
         "is_available": True,
         "approval_status": "approved",
         "current_location": {"lat": 0.0, "lng": 0.0},
-        "rating": 5.0,
+        "rating": None,
         "total_deliveries": 0,
         "earnings_today": 0,
         "created_at": int(time.time()),

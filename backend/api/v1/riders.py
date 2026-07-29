@@ -385,7 +385,7 @@ def get_rider_profile():
                     "data": {
                         "name": rider.get("name", ""),
                         "phone": rider.get("phone", ""),
-                        "rating": rider.get("rating", 4.8),
+                        "rating": rider.get("rating"),
                         "total_deliveries": rider.get("total_deliveries", 0),
                         "vehicle": rider.get("vehicle_type", "Bike"),
                         "vehicle_no": rider.get("vehicle_no", ""),
@@ -401,7 +401,7 @@ def get_rider_profile():
             "data": {
                 "name": request.rider_user.get("name", "Rider"),
                 "phone": request.rider_user.get("phone", ""),
-                "rating": 4.8,
+                "rating": None,
                 "total_deliveries": 0,
                 "vehicle": "Bike",
                 "vehicle_no": "",
