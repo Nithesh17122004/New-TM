@@ -381,13 +381,6 @@ def google_firebase_login():
     }), 200
 
 
-    except ValueError as e:
-        return jsonify({"success": False, "message": f"Invalid Google token: {str(e)}"}), 401
-    except Exception as e:
-        logger.error("Google login error: %s", str(e))
-        return jsonify({"success": False, "message": "Google login failed"}), 500
-
-
 @auth_bp.route("/save-phone", methods=["POST"])
 def save_phone():
     auth_hdr = request.headers.get("Authorization", "")
