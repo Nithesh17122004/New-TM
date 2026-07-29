@@ -321,6 +321,18 @@
           <button class="btn-primary" id="sendCustomerOtpBtn" onclick="sendCustomerOTP()" style="width:100%;margin-top:8px">
             <i class="fas fa-paper-plane"></i> Send OTP
           </button>
+
+          <div style="display:flex;align-items:center;gap:12px;margin:18px 0">
+            <hr style="flex:1;border:none;border-top:1px solid var(--border)">
+            <span style="color:var(--text-dim);font-size:13px">or</span>
+            <hr style="flex:1;border:none;border-top:1px solid var(--border)">
+          </div>
+
+          <button class="btn" id="googleLoginBtn" onclick="loginWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer">
+            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.61 1.22 9.09 3.2l6.82-6.82C35.98 2.32 30.41 0 24 0 14.92 0 6.92 5.48 2.86 13.36l7.86 6.1C12.46 14.04 17.76 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.72 28.54c-1.2-3.6-1.2-7.48 0-11.08l-7.86-6.1C.98 15.09 0 19.38 0 24s.98 8.91 2.86 12.64l7.86-6.1z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.55-13.47-10.64l-7.86 6.1C6.92 42.52 14.92 48 24 48z"/></svg>
+            <span>Sign in with Google</span>
+          </button>
+
           <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">
             By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> &amp; <a href="#" style="color:var(--accent)">Privacy Policy</a>
           </p>
@@ -526,6 +538,47 @@ async function sendCustomerOTP(isResend) {
     if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
   } finally {
     if (btn) setLoading(btn, false, '<i class="fas fa-paper-plane"></i> Send OTP');
+  }
+}
+
+// ═══════════════════════════
+// GOOGLE Login (Customer)
+// ═══════════════════════════
+async function loginWithGoogle() {
+  const btn = document.getElementById('googleLoginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await firebase.auth().signInWithPopup(provider);
+    const firebaseToken = await result.user.getIdToken();
+
+    const res = await fetch(API_BASE + '/auth/google-firebase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: firebaseToken })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Google login failed');
+
+    const auth = {
+      id: data.data.user.email,
+      phone: data.data.user.phone || '',
+      name: data.data.user.name || 'User',
+      role: 'customer',
+      token: data.data.token
+    };
+    localStorage.setItem('tm_auth', JSON.stringify(auth));
+    showToast('Welcome, ' + auth.name + '!', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  } catch (err) {
+    console.error(err);
+    if (err.code !== 'auth/popup-closed-by-user') {
+      showToast(err.message || 'Google login failed', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.61 1.22 9.09 3.2l6.82-6.82C35.98 2.32 30.41 0 24 0 14.92 0 6.92 5.48 2.86 13.36l7.86 6.1C12.46 14.04 17.76 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.72 28.54c-1.2-3.6-1.2-7.48 0-11.08l-7.86-6.1C.98 15.09 0 19.38 0 24s.98 8.91 2.86 12.64l7.86-6.1z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.55-13.47-10.64l-7.86 6.1C6.92 42.52 14.92 48 24 48z"/></svg><span>Sign in with Google</span>';
   }
 }
 

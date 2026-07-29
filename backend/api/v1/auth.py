@@ -313,7 +313,70 @@ def google_login():
                     "role": "customer",
                 },
             },
-        }), 200
+    }), 200
+
+
+@auth_bp.route("/google-firebase", methods=["POST"])
+def google_firebase_login():
+    data = request.get_json(silent=True) or {}
+    id_token = str(data.get("id_token", "")).strip()
+    if not id_token:
+        return jsonify({"success": False, "message": "Missing id_token"}), 400
+
+    decoded = _verify_firebase_id_token(id_token)
+    if decoded is None:
+        return jsonify({"success": False, "message": "Invalid token"}), 401
+
+    email = decoded.get("email", "")
+    name = decoded.get("name", email.split("@")[0] if email else "User")
+    firebase_uid = decoded.get("uid", "")
+    provider = decoded.get("firebase", {}).get("sign_in_provider", "google.com")
+
+    if not email:
+        return jsonify({"success": False, "message": "Email not available"}), 400
+
+    db = get_db()
+    user = None
+    if db is not None:
+        user = db.customers.find_one({"email": email}) or db.customers.find_one({"firebase_uid": firebase_uid})
+
+    if not user:
+        user_doc = {
+            "firebase_uid": firebase_uid,
+            "email": email,
+            "name": name,
+            "phone": "",
+            "role": "customer",
+            "provider": provider,
+            "created_at": int(time.time()),
+        }
+        if db is not None:
+            result = db.customers.insert_one(user_doc)
+            user_doc["_id"] = result.inserted_id
+        user = user_doc
+
+    token = _make_token({
+        "id": str(user.get("_id", "")),
+        "email": email,
+        "firebase_uid": firebase_uid,
+        "name": user.get("name", name),
+        "role": "customer",
+    })
+
+    return jsonify({
+        "success": True,
+        "message": "Login successful",
+        "data": {
+            "token": token,
+            "user": {
+                "name": user.get("name", name),
+                "email": email,
+                "phone": user.get("phone", ""),
+                "role": "customer",
+            },
+        },
+    }), 200
+
 
     except ValueError as e:
         return jsonify({"success": False, "message": f"Invalid Google token: {str(e)}"}), 401
