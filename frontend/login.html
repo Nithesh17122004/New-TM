@@ -520,7 +520,6 @@ function tryGisSignIn() {
 }
 
 async function handleGoogleSignIn() {
-  if (await tryNativeSignIn()) return;
   if (tryGisSignIn()) return;
   const btn = document.getElementById('googleSignInBtn');
   const orig = btn.innerHTML;
