@@ -2419,8 +2419,9 @@ function updateTrackingUI(order) {
   const lrTime = document.getElementById('tstep-lr-time');
   if (lrTime) {
     if (order.rider_name) lrTime.textContent = order.rider_name + ' assigned as your rider';
-    else if (status === 'accepted' && !order.rider_id) lrTime.textContent = 'Looking for nearby delivery partners...';
-    else lrTime.textContent = 'Delivery partner assigned';
+    else if (order.rider_id) lrTime.textContent = 'Delivery partner assigned';
+    else if (status === 'accepted' || status === 'preparing') lrTime.textContent = 'Looking for nearby delivery partners...';
+    else lrTime.textContent = 'Looking for rider...';
   }
   // ETA
   const etaEl = document.getElementById('trackingEta');

@@ -596,6 +596,7 @@ document.addEventListener('DOMContentLoaded',function(){
     fetchMenuFromAPI();
     fetchOrdersFromAPI();
     setInterval(fetchOrdersFromAPI, 15000);
+    fetchRestaurantProfile();
   }
   renderAll();
 });
@@ -623,8 +624,22 @@ function showPage(page){
 }
 
 /* ============================================================
-   RESTAURANT OPEN/CLOSE TOGGLE
+   RESTAURANT PROFILE & OPEN/CLOSE TOGGLE
    ============================================================ */
+function fetchRestaurantProfile(){
+  if(DEMO||!token||!RID)return;
+  fetch(API+'/restaurants/'+RID,{headers:HDR})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success&&d.data){
+        var open=!!d.data.is_open;
+        var cb=document.getElementById('restOpenToggle');
+        var lbl=document.getElementById('openLabel');
+        if(cb)cb.checked=open;
+        if(lbl){lbl.textContent=open?'OPEN':'CLOSED';lbl.className='open-label'+(open?' open-text':'');}
+      }
+    }).catch(function(){});
+}
 function toggleRestOpen(){
   var open=document.getElementById('restOpenToggle').checked;
   var lbl=document.getElementById('openLabel');
@@ -683,7 +698,8 @@ function mapOrder(o){
   return{id:o._id||o.order_id,customer:ph.length>=4?'****'+ph.slice(-4):'****',customer_phone:ph,
     items:(o.items||[]).map(function(i){return{name:i.name,qty:i.qty||i.quantity||1,price:i.price};}),
     total:o.total||0,status:mapStatus(o.status),time:fmtTime(o.created_at),
-    payment:(o.payment_method||'UPI').toUpperCase()};
+    payment:(o.payment_method||'UPI').toUpperCase(),
+    rider_name: o.rider_name || (o.rider && o.rider.name) || ''};
 }
 function acceptOrder(id){
   fetch(API+'/restaurants/'+RID+'/orders/'+id+'/accept',{method:'PATCH',headers:HDR})
@@ -773,8 +789,8 @@ function filterOrders(f,btn){
 function renderOrdersTable(){
   var list=orderFilter==='all'?ORDERS:ORDERS.filter(function(o){return o.status===orderFilter;});
   var chipMap={pending:'chip-gold',preparing:'chip-blue',ready:'chip-green',delivered:'chip-green',cancelled:'chip-red'};
-  var head='<thead><tr><th>Order ID</th><th>Items</th><th>Amount</th><th>Customer</th><th>Payment</th><th>Status</th><th>Time</th><th>Action</th></tr></thead>';
-  if(!list.length){setText('ordersTable',head+'<tbody><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--dim)">No orders</td></tr></tbody>');return;}
+  var head='<thead><tr><th>Order ID</th><th>Items</th><th>Amount</th><th>Customer</th><th>Payment</th><th>Status</th><th>Rider</th><th>Time</th><th>Action</th></tr></thead>';
+  if(!list.length){setText('ordersTable',head+'<tbody><tr><td colspan="9" style="text-align:center;padding:32px;color:var(--dim)">No orders</td></tr></tbody>');return;}
   setText('ordersTable',head+'<tbody>'+list.map(function(o){
     var oid=esc(o.id),a='';
     if(o.status==='pending')a='<button class="btn-accept" onclick="acceptOrder(\''+oid+'\')">Accept</button> <button class="btn-reject" onclick="rejectOrder(\''+oid+'\')">Reject</button>';
@@ -787,6 +803,7 @@ function renderOrdersTable(){
       '<td style="color:var(--accent);font-weight:700">₹'+o.total+'</td>'+
       '<td>'+esc(o.customer)+'</td><td>'+o.payment+'</td>'+
       '<td><span class="chip '+(chipMap[o.status]||'chip-gray')+'">'+o.status+'</span></td>'+
+      '<td style="font-size:12px">'+(o.rider_name||'<span style="color:var(--dim)">—</span>')+'</td>'+
       '<td style="color:var(--dim);font-size:11px">'+o.time+'</td>'+
       '<td>'+a+'<button class="btn-outline-sm" onclick="viewOrder(\''+oid+'\')" style="margin-left:4px">View</button></td></tr>';
   }).join('')+'</tbody>');
