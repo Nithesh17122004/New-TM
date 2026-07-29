@@ -197,6 +197,28 @@
     }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 
+    /* ── Google Sign-In Button ── */
+    .google-btn {
+      background: #fff;
+      color: #1f1f1f;
+      border: 1px solid #dadce0;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 12px 24px;
+      border-radius: 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+    .google-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transform: none;
+    }
+    .google-btn i {
+      font-size: 20px;
+      color: #4285f4;
+    }
+
     /* ── OTP Dev Hint ── */
     .dev-hint {
       margin-top: 12px; padding: 10px 14px;
@@ -311,23 +333,10 @@
       <div class="tab-panel active" id="panel-customer" role="tabpanel" aria-labelledby="tab-customer">
         <p class="panel-title">Welcome to Thooku Madurai 🍛</p>
         <p class="panel-subtitle">Sign in with Google to continue</p>
-        <div id="gSignInWrapper" style="margin-top:20px;text-align:center">
-          <div id="g_id_onload"
-               data-client_id="849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com"
-               data-context="signin"
-               data-ux_mode="popup"
-               data-callback="handleGoogleCredential"
-               data-auto_prompt="false">
-          </div>
-          <div class="g_id_signin"
-               data-type="standard"
-               data-shape="rectangular"
-               data-theme="outline"
-               data-text="signin_with"
-               data-size="large"
-               data-logo_alignment="left"
-               data-width="300">
-          </div>
+        <div id="gSignInWrapper" style="margin-top:20px;">
+          <button id="googleSignInBtn" onclick="handleGoogleSignIn()" class="btn google-btn">
+            <i class="fab fa-google"></i> Sign in with Google
+          </button>
         </div>
         <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">
           By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> &amp; <a href="#" style="color:var(--accent)">Privacy Policy</a>
@@ -468,11 +477,74 @@ wireOTPInputs('cotp');
 // ═══════════════════════════
 
 // ═══════════════════════════
-// GOOGLE Sign-In (Customer) — pure GIS, no Firebase
+// GOOGLE Sign-In (Customer) — Native + GIS fallback
 // ═══════════════════════════
+
+let gisInitialized = false;
+
 async function handleGoogleCredential(response) {
   const credential = response.credential;
   if (!credential) { showToast('Google sign-in failed', 'error'); return; }
+  await googleLogin(credential);
+}
+
+function initGIS() {
+  if (gisInitialized || !window.google?.accounts?.id) return;
+  gisInitialized = true;
+  google.accounts.id.initialize({
+    client_id: '849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com',
+    callback: handleGoogleCredential,
+    cancel_on_tap_outside: false,
+  });
+}
+
+async function tryNativeSignIn() {
+  const ga = window.Capacitor?.Plugins?.GoogleAuth;
+  if (!ga) return false;
+  try {
+    await ga.initialize();
+    const result = await ga.signIn();
+    const credential = result.authentication?.idToken || result.idToken;
+    if (credential) { await googleLogin(credential); return true; }
+  } catch (e) {
+    console.warn('Native GoogleAuth failed, trying GIS fallback', e);
+  }
+  return false;
+}
+
+function tryGisSignIn() {
+  initGIS();
+  if (!window.google?.accounts?.id) return false;
+  google.accounts.id.prompt();
+  return true;
+}
+
+async function handleGoogleSignIn() {
+  if (await tryNativeSignIn()) return;
+  if (tryGisSignIn()) return;
+  const btn = document.getElementById('googleSignInBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+  btn.disabled = true;
+  let waited = 0;
+  const check = setInterval(() => {
+    waited += 500;
+    if (window.google?.accounts?.id) {
+      clearInterval(check);
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      initGIS();
+      google.accounts.id.prompt();
+    } else if (waited >= 8000) {
+      clearInterval(check);
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      showToast('Google Sign-In is not available', 'error');
+    }
+  }, 500);
+}
+
+async function googleLogin(credential) {
   try {
     const res = await fetch(API_BASE + '/auth/google', {
       method: 'POST',
