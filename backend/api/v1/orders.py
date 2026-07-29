@@ -318,7 +318,11 @@ def place_order():
     if not data.get("customer_phone"):
         data["customer_phone"] = payload.get("phone", "")
 
-    required = ["restaurant_id", "items", "delivery_address", "payment_method", "customer_phone"]
+    # Google sign-in users have email instead of phone — use that as customer_phone fallback
+    if not data.get("customer_phone"):
+        data["customer_phone"] = payload.get("email", payload.get("id", ""))
+
+    required = ["restaurant_id", "items", "delivery_address", "payment_method"]
     for field in required:
         if not data.get(field):
             return jsonify({"success": False, "message": f"'{field}' is required"}), 400
