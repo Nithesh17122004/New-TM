@@ -1,0 +1,13 @@
+{
+	"appId": "in.thookumadurai.app",
+	"appName": "Thooku Madurai",
+	"webDir": "../frontend",
+	"server": {
+		"url": "https://new-tm-knk1.onrender.com",
+		"cleartext": false
+	},
+	"android": {
+		"allowMixedContent": false
+	},
+	"packageClassList": []
+}

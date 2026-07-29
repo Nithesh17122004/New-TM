@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Thooku Madurai</string>
+    <string name="title_activity_main">Thooku Madurai</string>
+    <string name="package_name">in.thookumadurai.app</string>
+    <string name="custom_url_scheme">in.thookumadurai.app</string>
+</resources>
