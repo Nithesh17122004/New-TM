@@ -261,11 +261,12 @@ def google_login():
         return jsonify({"success": False, "message": "Missing credential"}), 400
 
     try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as google_requests
-
-        GOOGLE_CLIENT_ID = data.get("client_id", "849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com")
-        info = google_id_token.verify_oauth2_token(id_token, google_requests.Request(), GOOGLE_CLIENT_ID)
+        import requests as req
+        resp = req.get("https://oauth2.googleapis.com/tokeninfo", params={"id_token": id_token}, timeout=10)
+        if resp.status_code != 200:
+            logger.warning(f"Google token verification failed: {resp.text}")
+            return jsonify({"success": False, "message": "Invalid Google token"}), 401
+        info = resp.json()
 
         email = info.get("email", "")
         name = info.get("name", email.split("@")[0] if email else "User")
@@ -284,7 +285,7 @@ def google_login():
                 "google_id": google_id,
                 "email": email,
                 "name": name,
-                "phone": data.get("phone", ""),
+                "phone": "",
                 "role": "customer",
                 "created_at": int(time.time()),
             }

@@ -12,8 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
   <style>
     :root {
       --bg: #060f08;
@@ -303,60 +302,31 @@
 
     <div class="tab-content">
 
-      <!-- ── CUSTOMER PANEL ── -->
+      <!-- ── CUSTOMER PANEL (Google Sign-In only) ── -->
       <div class="tab-panel active" id="panel-customer" role="tabpanel" aria-labelledby="tab-customer">
         <p class="panel-title">Welcome to Thooku Madurai 🍛</p>
-
-        <!-- Step 1: enter phone number -->
-        <div class="step active" id="cotp-step1">
-          <p class="panel-subtitle">Sign in with your phone number</p>
-          <div class="form-group" style="margin-top:14px">
-            <label class="form-label">Phone Number</label>
-            <div style="display:flex;gap:8px">
-              <span style="display:flex;align-items:center;padding:0 12px;background:var(--surface-mid);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted)">+91</span>
-              <input type="tel" class="form-control" id="custPhoneInput" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" style="flex:1">
-            </div>
+        <p class="panel-subtitle">Sign in with Google to continue</p>
+        <div id="gSignInWrapper" style="margin-top:20px;text-align:center">
+          <div id="g_id_onload"
+               data-client_id="YOUR_GOOGLE_CLIENT_ID"
+               data-context="signin"
+               data-ux_mode="popup"
+               data-callback="handleGoogleCredential"
+               data-auto_prompt="false">
           </div>
-          <div id="recaptcha-container"></div>
-          <button class="btn-primary" id="sendCustomerOtpBtn" onclick="sendCustomerOTP()" style="width:100%;margin-top:8px">
-            <i class="fas fa-paper-plane"></i> Send OTP
-          </button>
-
-          <div style="display:flex;align-items:center;gap:12px;margin:18px 0">
-            <hr style="flex:1;border:none;border-top:1px solid var(--border)">
-            <span style="color:var(--text-dim);font-size:13px">or</span>
-            <hr style="flex:1;border:none;border-top:1px solid var(--border)">
-          </div>
-
-          <button class="btn" id="googleLoginBtn" onclick="loginWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer">
-            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.61 1.22 9.09 3.2l6.82-6.82C35.98 2.32 30.41 0 24 0 14.92 0 6.92 5.48 2.86 13.36l7.86 6.1C12.46 14.04 17.76 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.72 28.54c-1.2-3.6-1.2-7.48 0-11.08l-7.86-6.1C.98 15.09 0 19.38 0 24s.98 8.91 2.86 12.64l7.86-6.1z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.55-13.47-10.64l-7.86 6.1C6.92 42.52 14.92 48 24 48z"/></svg>
-            <span>Sign in with Google</span>
-          </button>
-
-          <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">
-            By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> &amp; <a href="#" style="color:var(--accent)">Privacy Policy</a>
-          </p>
-        </div>
-
-        <!-- Step 2: enter OTP -->
-        <div class="step" id="cotp-step2">
-          <p class="panel-subtitle">Enter the code sent to <span id="custPhoneDisplay" style="color:var(--text-muted)"></span></p>
-          <div class="otp-inputs" style="display:flex;gap:8px;justify-content:center;margin:18px 0">
-            <input type="text" class="otp-box form-control" id="cotp1" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-            <input type="text" class="otp-box form-control" id="cotp2" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-            <input type="text" class="otp-box form-control" id="cotp3" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-            <input type="text" class="otp-box form-control" id="cotp4" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-            <input type="text" class="otp-box form-control" id="cotp5" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-            <input type="text" class="otp-box form-control" id="cotp6" maxlength="1" inputmode="numeric" style="width:44px;text-align:center;font-size:20px">
-          </div>
-          <button class="btn-primary" id="verifyCustomerOtpBtn" onclick="verifyCustomerOTP()" style="width:100%">
-            <i class="fas fa-check"></i> Verify &amp; Continue
-          </button>
-          <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:13px">
-            <a href="#" onclick="goBack('cotp');return false;" style="color:var(--text-dim)"><i class="fas fa-arrow-left"></i> Change number</a>
-            <a href="#" onclick="sendCustomerOTP(true);return false;" style="color:var(--accent)">Resend OTP</a>
+          <div class="g_id_signin"
+               data-type="standard"
+               data-shape="rectangular"
+               data-theme="outline"
+               data-text="signin_with"
+               data-size="large"
+               data-logo_alignment="left"
+               data-width="300">
           </div>
         </div>
+        <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">
+          By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> &amp; <a href="#" style="color:var(--accent)">Privacy Policy</a>
+        </p>
       </div>
 
       <!-- ── RESTAURANT PANEL ── -->
@@ -492,75 +462,20 @@ wireOTPInputs('cotp');
 // CUSTOMER: Firebase Phone Auth (OTP)
 // ═══════════════════════════
 
-// Fill these in from your Firebase Console → Project Settings → General → Your apps.
-// This is a public client config (not a secret) — safe to ship in frontend JS.
-const firebaseConfig = {
-  apiKey: "AIzaSyAp29x15EXDgRt-5jqn-bhbPmUZKUqLUdQ",
-  authDomain: "thooku-madurai-b57d1.firebaseapp.com",
-  projectId: "thooku-madurai-b57d1",
-  appId: "1:349148445949:web:1d38b87f7575cdb10f9294"
-};
-firebase.initializeApp(firebaseConfig);
-
-let recaptchaVerifier = null;
-let confirmationResult = null;
-
-function getRecaptcha() {
-  if (!recaptchaVerifier) {
-    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'invisible'
-    });
-  }
-  return recaptchaVerifier;
-}
-
-async function sendCustomerOTP(isResend) {
-  const phone = document.getElementById('custPhoneInput').value.trim();
-  if (!/^\d{10}$/.test(phone)) {
-    showToast('Enter a valid 10-digit mobile number', 'error');
-    return;
-  }
-  const btn = document.getElementById('sendCustomerOtpBtn');
-  if (btn) setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i> Sending OTP...');
-  try {
-    const fullPhone = '+91' + phone;
-    confirmationResult = await firebase.auth().signInWithPhoneNumber(fullPhone, getRecaptcha());
-    document.getElementById('custPhoneDisplay').textContent = '+91 ' + phone;
-    document.getElementById('cotp-step1').classList.remove('active');
-    document.getElementById('cotp-step2').classList.add('active');
-    if (!isResend) showToast('OTP sent to +91 ' + phone, 'success');
-    else showToast('OTP resent', 'success');
-    document.getElementById('cotp1')?.focus();
-  } catch (err) {
-    console.error(err);
-    showToast(err.message || 'Could not send OTP — try again', 'error');
-    // Reset reCAPTCHA so the next attempt gets a fresh challenge
-    if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
-  } finally {
-    if (btn) setLoading(btn, false, '<i class="fas fa-paper-plane"></i> Send OTP');
-  }
-}
-
 // ═══════════════════════════
-// GOOGLE Login (Customer)
+// GOOGLE Sign-In (Customer) — pure GIS, no Firebase
 // ═══════════════════════════
-async function loginWithGoogle() {
-  const btn = document.getElementById('googleLoginBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+async function handleGoogleCredential(response) {
+  const credential = response.credential;
+  if (!credential) { showToast('Google sign-in failed', 'error'); return; }
   try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await firebase.auth().signInWithPopup(provider);
-    const firebaseToken = await result.user.getIdToken();
-
-    const res = await fetch(API_BASE + '/auth/google-firebase', {
+    const res = await fetch(API_BASE + '/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_token: firebaseToken })
+      body: JSON.stringify({ credential })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Google login failed');
-
     const auth = {
       id: data.data.user.email,
       phone: data.data.user.phone || '',
@@ -573,53 +488,7 @@ async function loginWithGoogle() {
     setTimeout(() => window.location.href = 'index.html', 800);
   } catch (err) {
     console.error(err);
-    if (err.code !== 'auth/popup-closed-by-user') {
-      showToast(err.message || 'Google login failed', 'error');
-    }
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.61 1.22 9.09 3.2l6.82-6.82C35.98 2.32 30.41 0 24 0 14.92 0 6.92 5.48 2.86 13.36l7.86 6.1C12.46 14.04 17.76 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.72 28.54c-1.2-3.6-1.2-7.48 0-11.08l-7.86-6.1C.98 15.09 0 19.38 0 24s.98 8.91 2.86 12.64l7.86-6.1z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.55-13.47-10.64l-7.86 6.1C6.92 42.52 14.92 48 24 48z"/></svg><span>Sign in with Google</span>';
-  }
-}
-
-async function verifyCustomerOTP() {
-  const code = [1,2,3,4,5,6].map(n => document.getElementById('cotp' + n).value).join('');
-  if (code.length !== 6) {
-    showToast('Enter the 6-digit code', 'error');
-    return;
-  }
-  if (!confirmationResult) {
-    showToast('Session expired — please resend the OTP', 'error');
-    return;
-  }
-  const btn = document.getElementById('verifyCustomerOtpBtn');
-  if (btn) setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i> Verifying...');
-  try {
-    const userCredential = await confirmationResult.confirm(code);
-    const idToken = await userCredential.user.getIdToken();
-
-    const res = await fetch(API_BASE + '/auth/firebase-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_token: idToken })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Login failed');
-
-    const auth = {
-      id: data.data.user.phone,
-      phone: data.data.user.phone || '',
-      name: data.data.user.name || 'User',
-      role: 'customer',
-      token: data.data.token
-    };
-    localStorage.setItem('tm_auth', JSON.stringify(auth));
-    showToast('Welcome, ' + auth.name + '!', 'success');
-    setTimeout(() => window.location.href = 'index.html', 800);
-  } catch (err) {
-    console.error(err);
-    showToast(err.message || 'Invalid OTP — try again', 'error');
-    if (btn) setLoading(btn, false, '<i class="fas fa-check"></i> Verify &amp; Continue');
+    showToast(err.message || 'Google login failed', 'error');
   }
 }
 
