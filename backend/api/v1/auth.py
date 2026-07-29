@@ -314,6 +314,9 @@ def google_login():
                 },
             },
     }), 200
+    except Exception as e:
+        logger.warning(f"Google login failed: {e}")
+        return jsonify({"success": False, "message": "Google login failed"}), 401
 
 
 @auth_bp.route("/google-firebase", methods=["POST"])
