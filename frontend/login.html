@@ -561,7 +561,6 @@ async function googleLogin(credential) {
     };
     localStorage.setItem('tm_auth', JSON.stringify(auth));
     showToast('Welcome, ' + auth.name + '!', 'success');
-    setTimeout(() => window.location.href = 'index.html', 800);
   } catch (err) {
     console.error(err);
     showToast(err.message || 'Google login failed', 'error');
@@ -692,20 +691,20 @@ function showToast(message, type = 'success') {
   }, 3500);
 }
 
-// Redirect if already logged in
-(function() {
-  const auth = JSON.parse(localStorage.getItem('tm_auth') || '{}');
-  if (auth.token) {
-    const redirectMap = {
-      customer: 'index.html',
-      restaurant: 'restaurant-dashboard.html',
-      rider: 'rider-dashboard.html',
-      superadmin: 'admin-panel.html'
-    };
-    const dest = redirectMap[auth.role];
-    if (dest) window.location.href = dest;
-  }
-})();
+// Redirect if already logged in (disabled for crash debugging)
+// (function() {
+//   const auth = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+//   if (auth.token) {
+//     const redirectMap = {
+//       customer: 'index.html',
+//       restaurant: 'restaurant-dashboard.html',
+//       rider: 'rider-dashboard.html',
+//       superadmin: 'admin-panel.html'
+//     };
+//     const dest = redirectMap[auth.role];
+//     if (dest) window.location.href = dest;
+//   }
+// })();
 </script>
 </body>
 </html>
