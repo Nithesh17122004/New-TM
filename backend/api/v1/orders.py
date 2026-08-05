@@ -198,7 +198,7 @@ def _offer_to_next_rider(db, order_id):
     if order.get("rider_id"):
         return {"success": False, "reason": "Already has a rider"}
 
-    if order.get("status") not in ("accepted",):
+    if order.get("status") not in ("accepted", "preparing"):
         return {"success": False, "reason": f"Order status is '{order.get('status')}'"}
 
     restaurant = db.restaurants.find_one({"_id": order.get("restaurant_id", "")})
@@ -807,7 +807,7 @@ def retry_rider_assignment():
     cutoff = now - 120
 
     orders = list(db.orders.find({
-        "status": "accepted",
+        "status": {"$in": ["accepted", "preparing"]},
         "rider_id": None,
         "$or": [
             {"last_offer_time": {"$lt": cutoff}},
@@ -844,7 +844,7 @@ def process_auto_refunds():
 
     # Find orders stuck in pending/accepted without rider for >30 min
     stuck_orders = list(db.orders.find({
-        "status": {"$in": ["pending", "accepted"]},
+        "status": {"$in": ["pending", "accepted", "preparing"]},
         "created_at": {"$lt": cutoff},
         "no_rider_refund_processed": {"$ne": True},
         "payment_status": {"$in": ["paid", "pending"]},
