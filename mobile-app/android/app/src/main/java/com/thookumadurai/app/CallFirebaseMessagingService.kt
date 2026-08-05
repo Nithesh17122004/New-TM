@@ -1,4 +1,4 @@
-package in.thookumadurai.app
+package com.thookumadurai.app
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage

@@ -1,4 +1,4 @@
-package in.thookumadurai.app
+package com.thookumadurai.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -27,7 +27,7 @@ const val ACTION_CALL_ANSWERED = "com.thookumadurai.app.CALL_ANSWERED"
 
 private const val CHANNEL_ID = "thooku_incoming_calls"
 // Point this at your deployed backend.
-private const val API_BASE = "https://thookumadurai.onrender.com"
+private const val API_BASE = "https://new-tm-knk1.onrender.com"
 
 class IncomingCallActivity : AppCompatActivity() {
 

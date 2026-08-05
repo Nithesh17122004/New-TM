@@ -1,10 +1,11 @@
-package in.thookumadurai.app
+package com.thookumadurai.app
 
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 
 /**
@@ -27,16 +28,28 @@ class CallPlugin : Plugin() {
 
     @PluginMethod
     fun getFcmToken(call: PluginCall) {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                call.reject("Could not get FCM token", task.exception)
-                return@addOnCompleteListener
+        // No google-services.json / Firebase project configured yet: fail
+        // cleanly instead of letting FirebaseMessaging.getInstance() throw
+        // IllegalStateException and crash the whole app. The JS bridge treats
+        // a rejected call as "push not available" and keeps working.
+        if (FirebaseApp.getApps(context).isEmpty()) {
+            call.reject("Firebase is not initialized. Add google-services.json to enable push notifications.")
+            return
+        }
+        try {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    call.reject("Could not get FCM token", task.exception)
+                    return@addOnCompleteListener
+                }
+                val token = task.result
+                TokenStore.save(context, token)
+                val ret = JSObject()
+                ret.put("token", token)
+                call.resolve(ret)
             }
-            val token = task.result
-            TokenStore.save(context, token)
-            val ret = JSObject()
-            ret.put("token", token)
-            call.resolve(ret)
+        } catch (e: Exception) {
+            call.reject("FCM token error: ${e.message}")
         }
     }
 

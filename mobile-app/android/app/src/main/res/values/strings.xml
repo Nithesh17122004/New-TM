@@ -4,4 +4,5 @@
     <string name="title_activity_main">Thooku Madurai</string>
     <string name="package_name">in.thookumadurai.app</string>
     <string name="custom_url_scheme">in.thookumadurai.app</string>
+    <string name="server_client_id">849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com</string>
 </resources>

@@ -1,4 +1,4 @@
-package in.thookumadurai.app
+package com.thookumadurai.app
 
 import android.Manifest
 import android.content.Intent
@@ -8,11 +8,13 @@ import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.getcapacitor.BridgeActivity
+import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth
 
 class MainActivity : BridgeActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         registerPlugin(CallPlugin::class.java)
+        registerPlugin(GoogleAuth::class.java)
         super.onCreate(savedInstanceState)
         requestNotificationPermissionIfNeeded()
         handleAnsweredCallIntent(intent)
@@ -20,7 +22,7 @@ class MainActivity : BridgeActivity() {
 
     /**
      * On Android 13+ (API 33+), declaring POST_NOTIFICATIONS in the manifest
-     * is NOT enough — the user must grant it at runtime, or notifications
+     * is NOT enough G�� the user must grant it at runtime, or notifications
      * (including the full-screen incoming-call one) never show, silently.
      * Without this, the whole feature looks "broken" with no error anywhere.
      */

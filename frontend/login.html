@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://accounts.google.com/gsi/client"></script>
+  <!-- GIS disabled — not supported in Capacitor WebView; using native plugin only -->
   <style>
     :root {
       --bg: #060f08;
@@ -420,6 +420,11 @@
 </div>
 
 <script>
+// Debug: show Capacitor bridge status
+document.addEventListener('DOMContentLoaded', function() {
+  var d = document.getElementById('debugBridge');
+  if (d) d.textContent = 'Capacitor=' + (typeof window.Capacitor) + ' Plugins=' + Object.keys(window.Capacitor?.Plugins || {}).join(',');
+});
 const API_BASE = 'https://new-tm-knk1.onrender.com/api/v1';
 
 // ── Tab switching ──
@@ -477,70 +482,27 @@ wireOTPInputs('cotp');
 // ═══════════════════════════
 
 // ═══════════════════════════
-// GOOGLE Sign-In (Customer) — Native + GIS fallback
+// GOOGLE Sign-In (Customer) — Native plugin only (GIS disabled — not supported in WebView)
 // ═══════════════════════════
 
-let gisInitialized = false;
-
-async function handleGoogleCredential(response) {
-  const credential = response.credential;
-  if (!credential) { showToast('Google sign-in failed', 'error'); return; }
-  await googleLogin(credential);
-}
-
-function initGIS() {
-  if (gisInitialized || !window.google?.accounts?.id) return;
-  gisInitialized = true;
-  google.accounts.id.initialize({
-    client_id: '849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com',
-    callback: handleGoogleCredential,
-    cancel_on_tap_outside: false,
-  });
-}
-
-async function tryNativeSignIn() {
+async function handleGoogleSignIn() {
+  const hasCapacitor = typeof window.Capacitor !== 'undefined';
+  const hasGoogleAuth = !!window.Capacitor?.Plugins?.GoogleAuth;
   const ga = window.Capacitor?.Plugins?.GoogleAuth;
-  if (!ga) return false;
+  if (!ga) {
+    showToast('Google Sign-In not available (Capacitor=' + hasCapacitor + ', Plugin=' + hasGoogleAuth + ')', 'error');
+    return;
+  }
   try {
     await ga.initialize();
     const result = await ga.signIn();
     const credential = result.authentication?.idToken || result.idToken;
-    if (credential) { await googleLogin(credential); return true; }
+    if (!credential) { showToast('Google sign-in failed', 'error'); return; }
+    await googleLogin(credential);
   } catch (e) {
-    console.warn('Native GoogleAuth failed, trying GIS fallback', e);
+    console.error('GoogleAuth error:', e);
+    showToast(e.message || 'Google sign-in failed', 'error');
   }
-  return false;
-}
-
-function tryGisSignIn() {
-  initGIS();
-  if (!window.google?.accounts?.id) return false;
-  google.accounts.id.prompt();
-  return true;
-}
-
-async function handleGoogleSignIn() {
-  if (tryGisSignIn()) return;
-  const btn = document.getElementById('googleSignInBtn');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-  btn.disabled = true;
-  let waited = 0;
-  const check = setInterval(() => {
-    waited += 500;
-    if (window.google?.accounts?.id) {
-      clearInterval(check);
-      btn.innerHTML = orig;
-      btn.disabled = false;
-      initGIS();
-      google.accounts.id.prompt();
-    } else if (waited >= 8000) {
-      clearInterval(check);
-      btn.innerHTML = orig;
-      btn.disabled = false;
-      showToast('Google Sign-In is not available', 'error');
-    }
-  }, 500);
 }
 
 async function googleLogin(credential) {
@@ -561,6 +523,7 @@ async function googleLogin(credential) {
     };
     localStorage.setItem('tm_auth', JSON.stringify(auth));
     showToast('Welcome, ' + auth.name + '!', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
   } catch (err) {
     console.error(err);
     showToast(err.message || 'Google login failed', 'error');
@@ -691,20 +654,20 @@ function showToast(message, type = 'success') {
   }, 3500);
 }
 
-// Redirect if already logged in (disabled for crash debugging)
-// (function() {
-//   const auth = JSON.parse(localStorage.getItem('tm_auth') || '{}');
-//   if (auth.token) {
-//     const redirectMap = {
-//       customer: 'index.html',
-//       restaurant: 'restaurant-dashboard.html',
-//       rider: 'rider-dashboard.html',
-//       superadmin: 'admin-panel.html'
-//     };
-//     const dest = redirectMap[auth.role];
-//     if (dest) window.location.href = dest;
-//   }
-// })();
+// Redirect if already logged in
+(function() {
+  const auth = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+  if (auth.token) {
+    const redirectMap = {
+      customer: 'index.html',
+      restaurant: 'restaurant-dashboard.html',
+      rider: 'rider-dashboard.html',
+      superadmin: 'admin-panel.html'
+    };
+    const dest = redirectMap[auth.role];
+    if (dest) window.location.href = dest;
+  }
+})();
 </script>
 </body>
 </html>

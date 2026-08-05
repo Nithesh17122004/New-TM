@@ -197,6 +197,28 @@
     }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 
+    /* ── Google Sign-In Button ── */
+    .google-btn {
+      background: #fff;
+      color: #1f1f1f;
+      border: 1px solid #dadce0;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 12px 24px;
+      border-radius: 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+    .google-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transform: none;
+    }
+    .google-btn i {
+      font-size: 20px;
+      color: #4285f4;
+    }
+
     /* ── OTP Dev Hint ── */
     .dev-hint {
       margin-top: 12px; padding: 10px 14px;
@@ -311,7 +333,7 @@
       <div class="tab-panel active" id="panel-customer" role="tabpanel" aria-labelledby="tab-customer">
         <p class="panel-title">Welcome to Thooku Madurai 🍛</p>
         <p class="panel-subtitle">Sign in with Google to continue</p>
-        <div id="gSignInWrapper" style="margin-top:20px;text-align:center">
+        <div id="gSignInWrapper" style="margin-top:20px;">
           <div id="g_id_onload"
                data-client_id="849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com"
                data-context="signin"
@@ -319,15 +341,9 @@
                data-callback="handleGoogleCredential"
                data-auto_prompt="false">
           </div>
-          <div class="g_id_signin"
-               data-type="standard"
-               data-shape="rectangular"
-               data-theme="outline"
-               data-text="signin_with"
-               data-size="large"
-               data-logo_alignment="left"
-               data-width="300">
-          </div>
+          <button id="googleSignInBtn" onclick="handleGoogleSignIn()" class="btn google-btn">
+            <i class="fab fa-google"></i> Sign in with Google
+          </button>
         </div>
         <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">
           By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> &amp; <a href="#" style="color:var(--accent)">Privacy Policy</a>
@@ -468,11 +484,37 @@ wireOTPInputs('cotp');
 // ═══════════════════════════
 
 // ═══════════════════════════
-// GOOGLE Sign-In (Customer) — pure GIS, no Firebase
+// GOOGLE Sign-In (Customer) — Native (Capacitor) + GIS (Web)
 // ═══════════════════════════
+
+// GIS callback for web fallback
 async function handleGoogleCredential(response) {
   const credential = response.credential;
   if (!credential) { showToast('Google sign-in failed', 'error'); return; }
+  await googleLogin(credential);
+}
+
+// Main handler: uses Capacitor native plugin in app, GIS on web
+async function handleGoogleSignIn() {
+  const googleAuth = window.Capacitor?.Plugins?.GoogleAuth;
+  if (googleAuth) {
+    try {
+      const result = await googleAuth.signIn();
+      const credential = result.authentication?.idToken;
+      if (!credential) { showToast('Google sign-in failed', 'error'); return; }
+      await googleLogin(credential);
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Google sign-in cancelled', 'error');
+    }
+  } else if (window.google?.accounts?.id) {
+    google.accounts.id.prompt();
+  } else {
+    showToast('Google Sign-In is not available', 'error');
+  }
+}
+
+async function googleLogin(credential) {
   try {
     const res = await fetch(API_BASE + '/auth/google', {
       method: 'POST',

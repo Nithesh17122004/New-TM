@@ -2,23 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>
-/* Guaranteed session — runs before everything */
-(function(){
-  try {
-    var raw = localStorage.getItem('tm_auth');
-    var auth = raw ? JSON.parse(raw) : null;
-    if (!auth || auth.role !== 'restaurant') {
-      localStorage.setItem('tm_auth', JSON.stringify({
-        id:'demo_rest_001', restaurant_id:'demo_rest_001',
-        name:'Demo Restaurant', role:'restaurant', token:'demo_token_localhost'
-      }));
-    }
-  } catch(e) {
-    window._TM_FALLBACK = {id:'demo_rest_001',restaurant_id:'demo_rest_001',name:'Demo Restaurant',role:'restaurant',token:'demo_token_localhost'};
-  }
-})();
-</script>
+<script src="js/auth-guard.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Restaurant Dashboard — Thooku Madurai</title>
 <meta name="robots" content="noindex">

@@ -1,12 +1,18 @@
 {
-  "appId": "in.thookumadurai.app",
+  "appId": "com.thookumadurai.app",
   "appName": "Thooku Madurai",
   "webDir": "../frontend",
   "server": {
-    "url": "https://new-tm-knk1.onrender.com",
-    "cleartext": false
+    "allowNavigation": ["*.instamojo.com"]
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "clientId": "849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
   }
 }

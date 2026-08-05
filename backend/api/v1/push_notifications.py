@@ -34,7 +34,7 @@ def _auth(f):
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         try:
-            data = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=['HS256'])
+            data = jwt.decode(token, os.getenv('JWT_SECRET', 'thooku-madurai-secret-key-2026'), algorithms=['HS256'])
             request.user = data
         except Exception:
             return jsonify({'error': 'Unauthorized'}), 401

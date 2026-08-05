@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <script src="js/auth-guard.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
   <title>Admin Panel — Thooku Madurai</title>
@@ -1088,10 +1089,7 @@ async function saveRestaurant() {
 
 async function toggleRestaurantStatus(id, currentState) {
   try {
-    await apiFetch(`/admin/restaurants/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_open: !currentState })
-    });
+    await apiFetch(`/admin/restaurants/${id}/status`, { method: 'PATCH' });
     loadRestaurants();
     showToast('Status updated', 'success');
   } catch (e) { showToast(e.message, 'error'); }

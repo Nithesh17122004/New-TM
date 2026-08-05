@@ -24,7 +24,7 @@ admin_bp = Blueprint("admin", __name__)
 logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.environ.get(
-    "JWT_SECRET", "thooku-madurai-secret-2026-change-in-production"
+    "JWT_SECRET", "thooku-madurai-secret-key-2026"
 )
 IS_PRODUCTION = os.environ.get("FLASK_ENV", "development") == "production"
 

@@ -1,4 +1,4 @@
-package in.thookumadurai.app
+package com.thookumadurai.app
 
 import android.content.Context
 
