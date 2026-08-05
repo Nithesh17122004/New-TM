@@ -253,7 +253,7 @@ def _offer_to_next_rider(db, order_id):
                 "items": order.get("items", []),
                 "total": order.get("total", 0),
                 "distance_km": round(distance, 2),
-                "offer_timeout": 30,
+                "offer_timeout": 120,
             }, room=f"rider_{next_rider_id}")
         except Exception:
             pass

@@ -508,7 +508,7 @@ async function fetchOrder(){
     }
     // Handle no riders left
     if (o.no_riders_left || o.no_riders_available) {
-      showRefundBanner('No delivery partners available nearby. We will keep trying every 2 minutes. Auto-refund in 30 min if no rider found.');
+      showRefundBanner('Sorry for the delay! No delivery partners are available nearby right now. We will keep trying every 2 minutes. Auto-refund in 30 min if no rider found.');
     } else {
       var rb = document.getElementById('refundBanner');
       if (rb) rb.style.display = 'none';
@@ -643,12 +643,6 @@ function playRemoteStream(stream){
   if(!stream) return;
   if(!stream.getAudioTracks().length){ console.warn('No audio tracks in remote stream'); return; }
   try{
-    if(!_audioCtx||_audioCtx.state==='closed') _audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(_audioCtx.state==='suspended') _audioCtx.resume();
-    var src=_audioCtx.createMediaStreamSource(stream);
-    src.connect(_audioCtx.destination);
-  }catch(e){ console.warn('AudioContext error:',e); }
-  try{
     var audio=document.getElementById('callAudio');
     if(!audio){audio=new Audio();audio.id='callAudio';audio.setAttribute('playsinline','');audio.style.display='none';document.body.appendChild(audio);}
     audio.muted=false;audio.volume=1.0;audio.srcObject=stream;
@@ -680,19 +674,27 @@ function playRingtone(){
   unlockAudio();
   function beep(){
     if(!_audioCtx) return;
-    var osc = _audioCtx.createOscillator();
+    var t = _audioCtx.currentTime;
+    var osc1 = _audioCtx.createOscillator();
+    var osc2 = _audioCtx.createOscillator();
     var gain = _audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 480;
-    gain.gain.setValueAtTime(0.0001, _audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, _audioCtx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, _audioCtx.currentTime + 0.9);
-    osc.connect(gain).connect(_audioCtx.destination);
-    osc.start();
-    osc.stop(_audioCtx.currentTime + 1);
+    osc1.type = 'sine';
+    osc1.frequency.value = 440;
+    osc2.type = 'sine';
+    osc2.frequency.value = 480;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.9, t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(_audioCtx.destination);
+    osc1.start();
+    osc2.start();
+    osc1.stop(t + 1);
+    osc2.stop(t + 1);
   }
   beep();
-  ringtoneInterval = setInterval(beep, 1600);
+  ringtoneInterval = setInterval(beep, 2000);
   if(navigator.vibrate) {
     try{ navigator.vibrate([500, 300, 500, 300, 500]); }catch(e){}
   }

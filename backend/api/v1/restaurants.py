@@ -486,13 +486,12 @@ def accept_order(restaurant_id, order_id):
         {"$set": {"status": "preparing", "accepted_at": int(time.time())}},
     )
 
-    # Auto-assign nearest online rider (Swiggy/Zomato style)
+    # Offer to nearest online rider (Swiggy/Zomato style) — rider must
+    # accept/decline; never force-assign.
     restaurant = db.restaurants.find_one({"_id": restaurant_id})
     if restaurant and not order.get("rider_id"):
-        from api.v1.orders import _assign_rider
-        restaurant_lat = float(restaurant.get("lat", 9.9252))
-        restaurant_lng = float(restaurant.get("lng", 78.1198))
-        _assign_rider(db, order_id, restaurant_lat, restaurant_lng)
+        from api.v1.orders import _offer_to_next_rider
+        _offer_to_next_rider(db, order_id)
 
     return jsonify({"success": True, "message": "Order accepted and preparing"}), 200
 
