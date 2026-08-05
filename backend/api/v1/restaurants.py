@@ -481,9 +481,11 @@ def accept_order(restaurant_id, order_id):
     if order.get("status") != "pending":
         return jsonify({"success": False, "message": f"Cannot accept order with status '{order.get('status')}'"}), 400
 
+    # Mark as "accepted" (looking for rider). The rider-accept endpoint
+    # moves it to "preparing" once a delivery partner claims the order.
     db.orders.update_one(
         {"_id": order_id},
-        {"$set": {"status": "preparing", "accepted_at": int(time.time())}},
+        {"$set": {"status": "accepted", "accepted_at": int(time.time())}},
     )
 
     # Offer to nearest online rider (Swiggy/Zomato style) — rider must
@@ -493,7 +495,7 @@ def accept_order(restaurant_id, order_id):
         from api.v1.orders import _offer_to_next_rider
         _offer_to_next_rider(db, order_id)
 
-    return jsonify({"success": True, "message": "Order accepted and preparing"}), 200
+    return jsonify({"success": True, "message": "Order accepted, offering to nearest rider"}), 200
 
 
 @restaurants_bp.route("/<restaurant_id>/orders/<order_id>/reject", methods=["PATCH"])
