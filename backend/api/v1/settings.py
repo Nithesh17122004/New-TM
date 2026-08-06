@@ -58,17 +58,24 @@ def get_ice_config():
             auth = base64.b64encode(f"{xirsys_ident}:{xirsys_secret}".encode()).decode()
             req = urllib.request.Request(
                 f"https://global.xirsys.net/_turn/{xirsys_channel}",
-                headers={"Authorization": f"Basic {auth}"},
+                data=b'{"format": "urls"}',
+                headers={
+                    "Authorization": f"Basic {auth}",
+                    "Content-Type": "application/json",
+                },
+                method="PUT",
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
-            if data.get("s") == "ok" and data.get("iceServers"):
-                for server in data["iceServers"]:
-                    ice_servers.append({
-                        "urls": server["urls"],
-                        "username": server.get("username"),
-                        "credential": server.get("credential"),
-                    })
+            servers = data.get("v", {}).get("iceServers") if data.get("s") == "ok" else None
+            if isinstance(servers, dict):
+                servers = [servers]
+            for server in servers or []:
+                ice_servers.append({
+                    "urls": server["urls"],
+                    "username": server.get("username"),
+                    "credential": server.get("credential"),
+                })
         except Exception:
             # TURN unreachable — keep STUN so normal NAT calls still work
             pass
