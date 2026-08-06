@@ -2046,13 +2046,31 @@ function logout() {
   setTimeout(function(){ window.location.reload(); }, 500);
 }
 
+var _iceConfigCache = null;
+var _meteredTurn = {
+  urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+};
 function getCallConfig() {
-  return { iceServers: [
-    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302'] },
-    { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: ['turns:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }
-  ], iceCandidatePoolSize: 10 };
+  var servers = (_iceConfigCache && _iceConfigCache.iceServers) ? _iceConfigCache.iceServers.slice() : [];
+  var hasTurn = servers.some(function(s){
+    return (s.urls || []).some(function(u){ return u.indexOf('turn:') === 0 || u.indexOf('turns:') === 0; });
+  });
+  if (!hasTurn) servers.push(_meteredTurn);
+  if (!servers.length) servers.push({ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] });
+  return { iceServers: servers, iceCandidatePoolSize: 10 };
 }
+async function loadIceConfig() {
+  try {
+    var res = await fetch(API_BASE + '/settings/ice-config');
+    var data = await res.json();
+    if (data.success && data.data && data.data.iceServers) {
+      _iceConfigCache = { iceServers: data.data.iceServers, iceCandidatePoolSize: 10 };
+    }
+  } catch(e) { console.warn('Could not load ICE config, using fallback', e); }
+}
+loadIceConfig();
 
 function createPeerConnection(orderId, onRemoteStream) {
   const cfg = getCallConfig();

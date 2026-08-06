@@ -1,0 +1,20 @@
+# Coturn TURN server — Thooku Madurai
+# Usage: docker compose -f docker-compose.turn.yml up -d
+# Run this on a VPS with a public IP (NOT Render — Render has no UDP).
+version: "3.9"
+
+services:
+  coturn:
+    image: coturn/coturn:latest
+    container_name: thooku_coturn
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./coturn/coturn.conf:/etc/coturn/coturn.conf:ro
+      - ./coturn/turnuserdb.conf:/etc/coturn/turnuserdb.conf:ro
+      - coturn_certs:/etc/coturn/certs:ro
+    command: ["-c", "/etc/coturn/coturn.conf"]
+
+volumes:
+  coturn_certs:
+    driver: local
