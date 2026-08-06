@@ -12,9 +12,4 @@ services:
     volumes:
       - ./coturn/coturn.conf:/etc/coturn/coturn.conf:ro
       - ./coturn/turnuserdb.conf:/etc/coturn/turnuserdb.conf:ro
-      - coturn_certs:/etc/coturn/certs:ro
     command: ["-c", "/etc/coturn/coturn.conf"]
-
-volumes:
-  coturn_certs:
-    driver: local
