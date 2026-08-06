@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """Public platform settings (fees, support contact)."""
 
+import base64
+import json
+import os
+import urllib.request
+
 from flask import Blueprint, jsonify, current_app
 
 from services.platform_settings import get_platform_settings
@@ -25,14 +30,16 @@ def get_ice_config():
     WebRTC ICE server config for in-app calling — no auth required (these are
     not secret in the way an API key is; TURN credentials are short-lived-ish
     and only useful for relaying media, not for account access).
-    Always includes public Google STUN. Adds your own Coturn TURN server if
-    TURN_SERVER_URL/USERNAME/CREDENTIAL are set — this is what keeps calling
-    working when both parties are behind restrictive NATs (e.g. mobile data).
+    Always includes public Google STUN. TURN servers are added from:
+      1) Your own Coturn VPS via TURN_SERVER_URL/USERNAME/CREDENTIAL, or
+      2) Xirsys free via XIRSYS_IDENT/XIRSYS_SECRET/XIRSYS_CHANNEL (fresh
+         credentials are fetched from their REST API on every request —
+         Xirsys credentials expire, so never hardcode them).
     """
-    import os
     ice_servers = [
         {"urls": ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]}
     ]
+
     turn_url = os.environ.get("TURN_SERVER_URL", "")
     turn_user = os.environ.get("TURN_SERVER_USERNAME", "")
     turn_cred = os.environ.get("TURN_SERVER_CREDENTIAL", "")
@@ -42,4 +49,28 @@ def get_ice_config():
             "username": turn_user,
             "credential": turn_cred,
         })
+
+    xirsys_ident = os.environ.get("XIRSYS_IDENT", "")
+    xirsys_secret = os.environ.get("XIRSYS_SECRET", "")
+    xirsys_channel = os.environ.get("XIRSYS_CHANNEL", "")
+    if xirsys_ident and xirsys_secret and xirsys_channel:
+        try:
+            auth = base64.b64encode(f"{xirsys_ident}:{xirsys_secret}".encode()).decode()
+            req = urllib.request.Request(
+                f"https://global.xirsys.net/_turn/{xirsys_channel}",
+                headers={"Authorization": f"Basic {auth}"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+            if data.get("s") == "ok" and data.get("iceServers"):
+                for server in data["iceServers"]:
+                    ice_servers.append({
+                        "urls": server["urls"],
+                        "username": server.get("username"),
+                        "credential": server.get("credential"),
+                    })
+        except Exception:
+            # TURN unreachable — keep STUN so normal NAT calls still work
+            pass
+
     return jsonify({"success": True, "data": {"iceServers": ice_servers}}), 200
