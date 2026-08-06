@@ -597,20 +597,30 @@ function unlockAudio(){
 }
 
 var _iceConfigCache = null;
+var _meteredTurn = {
+  urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+};
 function getCallConfig(){
-  // Default while /settings/ice-config hasn't loaded yet, or if it's unreachable.
-  return _iceConfigCache || { iceServers: [
-    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }
-  ], iceCandidatePoolSize: 10 };
+  // Always keep a relay turn server available: STUN alone fails on mobile NAT.
+  // If /settings/ice-config returns a real TURN, prepend it and keep metered as fallback.
+  var servers = (_iceConfigCache && _iceConfigCache.iceServers) ? _iceConfigCache.iceServers.slice() : [];
+  var hasTurn = servers.some(function(s){
+    return (s.urls || []).some(function(u){ return u.indexOf('turn:') === 0 || u.indexOf('turns:') === 0; });
+  });
+  if (!hasTurn) servers.push(_meteredTurn);
+  if (!servers.length) servers.push({ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] });
+  return { iceServers: servers, iceCandidatePoolSize: 10 };
 }
 async function loadIceConfig(){
   try {
-    var res = await fetch(API_BASE + '/settings/ice-config');
+    var res = await fetch(API + '/settings/ice-config');
     var data = await res.json();
     if (data.success && data.data && data.data.iceServers) {
       _iceConfigCache = { iceServers: data.data.iceServers, iceCandidatePoolSize: 10 };
     }
-  } catch(e) { console.warn('Could not load ICE config, using STUN-only default', e); }
+  } catch(e) { console.warn('Could not load ICE config, using fallback', e); }
 }
 loadIceConfig();
 
@@ -672,31 +682,30 @@ var incomingCallTimeout = null;
 function playRingtone(){
   stopRingtone();
   unlockAudio();
+  // Soft ascending chime (C5-E5-G5-C6) instead of a harsh dual-tone beep.
   function beep(){
     if(!_audioCtx) return;
-    var t = _audioCtx.currentTime;
-    var osc1 = _audioCtx.createOscillator();
-    var osc2 = _audioCtx.createOscillator();
-    var gain = _audioCtx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.value = 440;
-    osc2.type = 'sine';
-    osc2.frequency.value = 480;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.9, t + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(_audioCtx.destination);
-    osc1.start();
-    osc2.start();
-    osc1.stop(t + 1.2);
-    osc2.stop(t + 1.2);
+    var notes = [523.25, 659.25, 783.99, 1046.50];
+    var t0 = _audioCtx.currentTime;
+    notes.forEach(function(freq, i){
+      var start = t0 + i * 0.14;
+      var osc = _audioCtx.createOscillator();
+      var gain = _audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.28, start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
+      osc.connect(gain);
+      gain.connect(_audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.6);
+    });
   }
   beep();
-  ringtoneInterval = setInterval(beep, 3000);
+  ringtoneInterval = setInterval(beep, 2800);
   if(navigator.vibrate) {
-    try{ navigator.vibrate([500, 300, 500, 300, 500]); }catch(e){}
+    try{ navigator.vibrate([250, 200, 250]); }catch(e){}
   }
 }
 

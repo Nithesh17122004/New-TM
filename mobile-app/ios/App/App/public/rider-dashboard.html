@@ -827,29 +827,28 @@ function playRingtone() {
   stopRingtone();
   if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  // Soft ascending chime (C5-E5-G5-C6) instead of a harsh dual-tone beep.
   _ringtoneInterval = setInterval(function() {
     try {
       if (!_audioCtx) return;
-      var t = _audioCtx.currentTime;
-      var osc1 = _audioCtx.createOscillator();
-      var osc2 = _audioCtx.createOscillator();
-      var gain = _audioCtx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.value = 440;
-      osc2.type = 'sine';
-      osc2.frequency.value = 480;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.9, t + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(_audioCtx.destination);
-      osc1.start();
-      osc2.start();
-      osc1.stop(t + 1.2);
-      osc2.stop(t + 1.2);
+      var notes = [523.25, 659.25, 783.99, 1046.50];
+      var t0 = _audioCtx.currentTime;
+      notes.forEach(function(freq, i) {
+        var start = t0 + i * 0.14;
+        var osc = _audioCtx.createOscillator();
+        var gain = _audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.28, start + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
+        osc.connect(gain);
+        gain.connect(_audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + 0.6);
+      });
     } catch(e) {}
-  }, 3000);
+  }, 2800);
 }
 function stopRingtone() {
   if (_ringtoneInterval) { clearInterval(_ringtoneInterval); _ringtoneInterval = null; }
