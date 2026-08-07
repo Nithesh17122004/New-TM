@@ -1,2 +1,6 @@
 # Generated on the VPS by deployment/coturn/setup.sh - machine-specific
 deployment/coturn/turnuserdb.conf
+
+# Python
+__pycache__/
+*.pyc

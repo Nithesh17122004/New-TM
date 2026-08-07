@@ -5,15 +5,15 @@
 <title>Menu Test</title>
 <style>
   body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
-  button { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
-  button:hover { background: #66bb6a; }
+  button { background: #f5a623; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
+  button:hover { background: #ffc34d; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; }
   .modal.open { display: flex; }
   .modal-box { background: #1a2e1a; padding: 30px; border-radius: 16px; width: 400px; }
   input { width: 100%; padding: 12px; background: #0a1a0e; border: 1px solid #2e5c2e; color: #eee; border-radius: 8px; margin: 8px 0; font-size: 15px; box-sizing: border-box; }
   .cat-item { padding: 12px; background: #0f2016; margin: 6px 0; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #2e5c2e; }
   .del-btn { background: #ef5350; padding: 4px 10px; font-size: 12px; border-radius: 4px; }
-  #status { margin-top: 20px; padding: 12px; background: #0a2a10; border-radius: 8px; font-size: 13px; color: #81c784; font-family: monospace; }
+  #status { margin-top: 20px; padding: 12px; background: #0a2a10; border-radius: 8px; font-size: 13px; color: #9fc9a8; font-family: monospace; }
 </style>
 </head>
 <body>
@@ -51,7 +51,7 @@ function checkLS() {
     localStorage.setItem('_test', '1');
     localStorage.removeItem('_test');
     document.getElementById('lsStatus').textContent = 'localStorage: WORKING';
-    document.getElementById('lsStatus').style.color = '#4caf50';
+    document.getElementById('lsStatus').style.color = '#34d399';
     log('localStorage is accessible');
   } catch(e) {
     document.getElementById('lsStatus').textContent = 'localStorage: BLOCKED — ' + e.message;

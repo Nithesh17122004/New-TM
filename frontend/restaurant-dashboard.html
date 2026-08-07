@@ -16,9 +16,9 @@
    ========================================================= */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --green:#4caf50;--accent:#4caf50;--gold:#ffc107;--red:#ef5350;--blue:#64b5f6;
-  --bg:#060f08;--surface:#0a1a10;--card:#0f2016;--border:rgba(76,175,80,.14);
-  --border-h:rgba(76,175,80,.35);--muted:#81c784;--dim:#4a7c59;
+  --green:#34d399;--accent:#f5a623;--gold:#ffb300;--red:#ef5350;--blue:#64b5f6;
+  --bg:#060f08;--surface:#0a1a10;--card:#0f2016;--border:rgba(245,166,35,.14);
+  --border-h:rgba(245,166,35,.35);--muted:#9fc9a8;--dim:#6b8f76;
   --text:#e8f5e9;--radius:14px;--sm:8px;--tr:all .22s ease;
 }
 html,body{height:100%}
@@ -38,7 +38,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
 .sidebar-logo-text small{color:var(--dim);font-size:9px;letter-spacing:1.5px;font-weight:500}
 .sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:var(--tr);border-left:3px solid transparent;margin-bottom:2px;user-select:none}
-.nav-item:hover,.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(76,175,80,.07)}
+.nav-item:hover,.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(245,166,35,.07)}
 .nav-item i{width:16px;text-align:center;font-size:14px}
 .nav-badge{margin-left:auto;background:var(--gold);color:#000;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;min-width:20px;text-align:center}
 .sidebar-footer{padding:14px;border-top:1px solid var(--border)}
@@ -65,7 +65,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
 .topbar-title{font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;white-space:nowrap}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .live-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)}50%{box-shadow:0 0 0 8px rgba(76,175,80,0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.4)}50%{box-shadow:0 0 0 8px rgba(245,166,35,0)}}
 .topbar-time{font-size:12px;color:var(--dim);font-weight:600}
 .content{padding:22px;flex:1}
 
@@ -110,7 +110,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
    ========================================================= */
 .btn{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:7px;font-family:'Inter',sans-serif}
 .btn-primary{background:linear-gradient(135deg,var(--green),var(--accent));color:#fff}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(76,175,80,.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(245,166,35,.35)}
 .btn-danger{background:rgba(239,83,80,.12);color:var(--red);border:1px solid rgba(239,83,80,.3)}
 .btn-danger:hover{background:rgba(239,83,80,.2)}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600}
@@ -127,7 +127,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
    CHIPS / BADGES
    ========================================================= */
 .chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-.chip-green{background:rgba(76,175,80,.15);color:var(--accent)}
+.chip-green{background:rgba(245,166,35,.15);color:var(--accent)}
 .chip-gold{background:rgba(255,193,7,.15);color:var(--gold)}
 .chip-red{background:rgba(239,83,80,.15);color:var(--red)}
 .chip-blue{background:rgba(100,181,246,.15);color:var(--blue)}
@@ -138,15 +138,15 @@ input,select,textarea{font-family:'Inter',sans-serif}
    ========================================================= */
 .data-table{width:100%;border-collapse:collapse;font-size:13px}
 .data-table th{font-size:11px;font-weight:600;color:var(--muted);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px}
-.data-table td{padding:11px 12px;border-bottom:1px solid rgba(76,175,80,.05)}
-.data-table tr:hover td{background:rgba(76,175,80,.03)}
+.data-table td{padding:11px 12px;border-bottom:1px solid rgba(245,166,35,.05)}
+.data-table tr:hover td{background:rgba(245,166,35,.03)}
 
 /* =========================================================
    FILTER ROW
    ========================================================= */
 .filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .filter-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:var(--tr)}
-.filter-btn.active,.filter-btn:hover{background:rgba(76,175,80,.1);border-color:var(--accent);color:var(--accent)}
+.filter-btn.active,.filter-btn:hover{background:rgba(245,166,35,.1);border-color:var(--accent);color:var(--accent)}
 
 /* =========================================================
    MENU MANAGEMENT
@@ -155,13 +155,13 @@ input,select,textarea{font-family:'Inter',sans-serif}
 .cat-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-height:300px}
 .cat-panel-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:10px;padding:0 4px}
 .cat-item{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;cursor:pointer;transition:var(--tr);font-size:13px;font-weight:600;color:var(--muted);margin-bottom:2px;gap:6px}
-.cat-item:hover,.cat-item.active{background:rgba(76,175,80,.1);color:var(--accent)}
+.cat-item:hover,.cat-item.active{background:rgba(245,166,35,.1);color:var(--accent)}
 .cat-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s;flex-shrink:0}
 .cat-item:hover .cat-actions{opacity:1}
 .cat-btn{background:none;border:none;padding:3px 5px;border-radius:4px;cursor:pointer;font-size:12px;transition:var(--tr)}
 .cat-btn-edit{color:var(--muted)}
-.cat-btn-edit:hover{color:var(--accent);background:rgba(76,175,80,.1)}
+.cat-btn-edit:hover{color:var(--accent);background:rgba(245,166,35,.1)}
 .cat-btn-del{color:var(--dim)}
 .cat-btn-del:hover{color:var(--red);background:rgba(239,83,80,.1)}
 .items-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
@@ -189,7 +189,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 .form-control{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;outline:none;transition:var(--tr)}
-.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(76,175,80,.1)}
+.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.1)}
 .form-control::placeholder{color:var(--dim)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
@@ -216,7 +216,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
 #toastContainer{position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;min-width:220px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideIn .3s ease;pointer-events:auto}
 @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
-.toast.success{background:#0a2a10;border:1px solid rgba(76,175,80,.4);color:var(--accent)}
+.toast.success{background:#0a2a10;border:1px solid rgba(245,166,35,.4);color:var(--accent)}
 .toast.error{background:#2a0a0a;border:1px solid rgba(239,83,80,.4);color:#ef9090}
 .toast.warning{background:#2a1e0a;border:1px solid rgba(255,193,7,.3);color:var(--gold)}
 
@@ -406,7 +406,7 @@ input,select,textarea{font-family:'Inter',sans-serif}
               <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
                 <span>📍 Location</span>
                 <button type="button" onclick="autoDetectLocation()" id="detectLocBtn"
-                  style="background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:var(--accent);padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:var(--tr)">
+                  style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:var(--accent);padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:var(--tr)">
                   🔍 Auto-Detect
                 </button>
               </label>
@@ -778,7 +778,7 @@ function renderOrdersTable(){
   setText('ordersTable',head+'<tbody>'+list.map(function(o){
     var oid=esc(o.id),a='';
     if(o.status==='pending')a='<button class="btn-accept" onclick="acceptOrder(\''+oid+'\')">Accept</button> <button class="btn-reject" onclick="rejectOrder(\''+oid+'\')">Reject</button>';
-    if(o.status==='preparing')a='<button class="btn-sm" style="background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:var(--accent)" onclick="markReady(\''+oid+'\')">Mark Ready</button>';
+    if(o.status==='preparing')a='<button class="btn-sm" style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:var(--accent)" onclick="markReady(\''+oid+'\')">Mark Ready</button>';
     if(o.status==='ready')a='<span style="color:var(--dim);font-size:11px">Waiting rider</span>';
     if(o.status==='delivered')a='<span style="color:var(--accent);font-size:11px">Done</span>';
     if(o.status==='cancelled')a='<span style="color:var(--red);font-size:11px">Cancelled</span>';
@@ -859,7 +859,7 @@ function renderItems(){
         '<div class="item-desc">'+(item.desc?esc(item.desc):'-')+'</div>'+
         '<div class="item-price">₹'+item.price+'</div>'+
         '<div class="item-actions">'+
-          '<button class="btn-sm" style="flex:1;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:var(--accent)" onclick="editItem(\''+esc(iid)+'\')">Edit</button>'+
+          '<button class="btn-sm" style="flex:1;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:var(--accent)" onclick="editItem(\''+esc(iid)+'\')">Edit</button>'+
           '<button class="btn-sm" style="background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);color:var(--red)" onclick="deleteItem(\''+esc(iid)+'\')">Del</button>'+
         '</div>'+
       '</div></div>';

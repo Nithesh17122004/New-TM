@@ -14,7 +14,7 @@
   <meta property="og:image" content="https://thookumadurai.in/assets/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Thooku Madurai — Local Food Delivery">
-  <meta name="theme-color" content="#1b6b3a">
+  <meta name="theme-color" content="#060f08">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="app-version" content="2.1.0">
   <link rel="canonical" href="https://thookumadurai.in">
@@ -51,8 +51,8 @@
 <!-- ===== PAGE LOADER ===== -->
 <div class="loader-overlay" id="pageLoader">
   <div style="text-align:center">
-    <img src="img/logo.png" alt="Thooku Madurai" style="width:80px;height:80px;object-fit:contain;margin-bottom:16px;animation:logoPulse 1.5s ease infinite;filter:drop-shadow(0 4px 16px rgba(76,175,80,0.4));">
-    <div style="font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:#4caf50; margin-bottom:8px;">THOOKU MADURAI</div>
+    <img src="img/logo.png" alt="Thooku Madurai" style="width:80px;height:80px;object-fit:contain;margin-bottom:16px;animation:logoPulse 1.5s ease infinite;filter:drop-shadow(0 4px 16px rgba(245,166,35,0.4));">
+    <div style="font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:#f5a623; margin-bottom:8px;">THOOKU MADURAI</div>
     <div style="font-size:12px; color:#999; letter-spacing:3px; margin-bottom:24px;">MADURAI'S OWN FOOD DELIVERY</div>
     <div class="loader-bar"><div class="loader-bar-fill"></div></div>
   </div>
@@ -92,8 +92,8 @@
       <button class="btn-primary btn-sm" onclick="toggleUserDropdown()" id="userBtn">
         <i class="fas fa-user-check"></i> <span id="userNameDisplay">User</span>
       </button>
-      <div id="userDropdown" style="display:none;position:absolute;top:100%;right:0;background:#0f2016;border:1px solid rgba(76,175,80,.14);border-radius:10px;padding:6px;min-width:160px;z-index:999;margin-top:6px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-        <div style="padding:10px 12px;border-bottom:1px solid rgba(76,175,80,.1);font-size:12px;color:#81c784" id="userEmailDisplay"></div>
+      <div id="userDropdown" style="display:none;position:absolute;top:100%;right:0;background:#0f2016;border:1px solid rgba(245,166,35,.14);border-radius:10px;padding:6px;min-width:160px;z-index:999;margin-top:6px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+        <div style="padding:10px 12px;border-bottom:1px solid rgba(245,166,35,.1);font-size:12px;color:#9fc9a8" id="userEmailDisplay"></div>
         <div style="padding:8px 12px;cursor:pointer;font-size:13px;border-radius:6px;color:#ef5350;display:flex;align-items:center;gap:8px" onclick="logout()" onmouseover="this.style.background='rgba(239,83,80,.1)'" onmouseout="this.style.background='transparent'">
           <i class="fas fa-sign-out-alt"></i> Logout
         </div>
@@ -267,21 +267,21 @@
   <div class="restaurant-grid" id="restaurantGrid">
     <!-- Skeleton Loaders -->
     <div class="restaurant-card" style="pointer-events:none" aria-hidden="true">
-      <div style="height:180px;background:linear-gradient(135deg,#ffffff,#f0f4f0);animation:loadBar 1.5s ease infinite"></div>
+      <div style="height:180px;background:linear-gradient(135deg,#0f2016,#0c1a12);animation:loadBar 1.5s ease infinite"></div>
       <div style="padding:16px">
         <div style="height:16px;background:var(--surface-mid);border-radius:4px;margin-bottom:8px;width:70%"></div>
         <div style="height:12px;background:var(--surface-mid);border-radius:4px;width:50%"></div>
       </div>
     </div>
     <div class="restaurant-card" style="pointer-events:none" aria-hidden="true">
-      <div style="height:180px;background:linear-gradient(135deg,#ffffff,#f0f4f0);animation:loadBar 1.5s ease infinite"></div>
+      <div style="height:180px;background:linear-gradient(135deg,#0f2016,#0c1a12);animation:loadBar 1.5s ease infinite"></div>
       <div style="padding:16px">
         <div style="height:16px;background:var(--surface-mid);border-radius:4px;margin-bottom:8px;width:70%"></div>
         <div style="height:12px;background:var(--surface-mid);border-radius:4px;width:50%"></div>
       </div>
     </div>
     <div class="restaurant-card" style="pointer-events:none" aria-hidden="true">
-      <div style="height:180px;background:linear-gradient(135deg,#ffffff,#f0f4f0);animation:loadBar 1.5s ease infinite"></div>
+      <div style="height:180px;background:linear-gradient(135deg,#0f2016,#0c1a12);animation:loadBar 1.5s ease infinite"></div>
       <div style="padding:16px">
         <div style="height:16px;background:var(--surface-mid);border-radius:4px;margin-bottom:8px;width:70%"></div>
         <div style="height:12px;background:var(--surface-mid);border-radius:4px;width:50%"></div>
@@ -386,7 +386,7 @@
       <button class="modal-close" onclick="closeModal('loginModal')" aria-label="Close modal">✕</button>
     </div>
     <div id="loginStep1">
-      <button class="btn-primary" style="width:100%" onclick="window.location.href='login.html'">
+      <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;justify-content:center" onclick="window.location.href='login.html'">
         <i class="fas fa-mobile-screen-button"></i> Continue with Phone Number
       </button>
       <p style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:16px">By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> & <a href="#" style="color:var(--accent)">Privacy Policy</a></p>
@@ -552,7 +552,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button type="button" onclick="openFullTracking()" title="Full screen map"
-          style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:#4caf50;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
+          style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:#ffc34d;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
           🗺️ Full Map
         </button>
         <button class="modal-close" onclick="closeTrackingModal()" aria-label="Close tracking">✕</button>
@@ -599,7 +599,7 @@
           <div style="font-weight:700;font-size:14px" id="riderInfoName">Your Rider</div>
           <div style="font-size:12px;color:var(--text-muted)">Tap Call — your number stays private</div>
         </div>
-        <button type="button" style="background:#4caf50;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="callRiderMasked()">
+        <button type="button" style="background:#f5a623;color:#0a1a10;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="callRiderMasked()">
           <i class="fas fa-phone"></i> Call
         </button>
       </div>
@@ -650,7 +650,7 @@
 
 <!-- ===== CART SLIDE-OVER ===== -->
 <div id="cartOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:800;display:none;opacity:0;transition:opacity 0.3s" onclick="closeCart()"></div>
-<div id="cartDrawer" style="position:fixed;right:0;top:0;bottom:0;width:360px;background:var(--surface-mid);border-left:1px solid var(--border);z-index:900;transform:translateX(100%);transition:transform 0.3s ease;display:flex;flex-direction:column;padding-top:70px" role="complementary" aria-label="Shopping cart">
+<div id="cartDrawer" class="cart-drawer" role="complementary" aria-label="Shopping cart">
   <div class="cart-header">
     <div class="cart-title"><i class="fas fa-shopping-bag" style="color:var(--accent)"></i> Your Cart</div>
     <button onclick="closeCart()" aria-label="Close cart" style="color:var(--text-muted);font-size:18px">✕</button>
@@ -687,13 +687,13 @@
 
 <!-- ===== CALL OVERLAY (WebRTC) ===== -->
 <div id="callOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
-  <div style="background:#0f2016;border-radius:20px;padding:32px;text-align:center;max-width:340px;width:100%;border:1px solid rgba(76,175,80,.14)">
+  <div style="background:#0f2016;border-radius:20px;padding:32px;text-align:center;max-width:340px;width:100%;border:1px solid rgba(245,166,35,.14)">
     <div style="font-size:56px;margin-bottom:12px" id="callOverlayIcon">📞</div>
-    <div style="font-size:22px;font-weight:800;margin-bottom:4px;color:#4caf50" id="callOverlayName">Connecting...</div>
-    <div style="font-size:13px;color:#4a7c59;margin-bottom:24px" id="callOverlayStatus">Calling...</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:4px;color:#f5a623" id="callOverlayName">Connecting...</div>
+    <div style="font-size:13px;color:#6b8f76;margin-bottom:24px" id="callOverlayStatus">Calling...</div>
     <div id="callOverlayButtons">
       <div id="incomingCallControls" style="display:none;gap:16px;justify-content:center">
-        <button onclick="answerIncomingCall()" style="background:#4caf50;border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(76,175,80,.4)" title="Answer">📞</button>
+        <button onclick="answerIncomingCall()" style="background:#34d399;border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(52,211,153,.4)" title="Answer">📞</button>
         <button onclick="declineIncomingCall()" style="background:#e53935;border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(229,57,53,.4)" title="Decline">📞</button>
       </div>
       <div id="activeCallControls" style="display:none;gap:16px;justify-content:center">
@@ -701,7 +701,7 @@
       </div>
     </div>
     <div id="callMuteRow" style="display:none;margin-top:12px">
-      <button id="callMuteBtn" onclick="toggleMute()" style="background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);border-radius:12px;padding:8px 20px;cursor:pointer;font-size:14px;color:#e8f5e9">🔊 Mute</button>
+      <button id="callMuteBtn" onclick="toggleMute()" style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:12px;padding:8px 20px;cursor:pointer;font-size:14px;color:#e8f5e9">🔊 Mute</button>
     </div>
   </div>
 </div>
@@ -970,7 +970,7 @@ async function loadRestaurantsFromAPI() {
     updateHeroStats(0);
     if (grid) {
       if (err.name === 'AbortError') {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#666"><div style="font-size:48px;margin-bottom:12px">📡</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Connection Issue</div><div style="font-size:13px;color:#999">Could not reach the server. <a href="#" onclick="location.reload()" style="color:#4caf50;text-decoration:underline">Tap to retry</a></div></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#9fc9a8"><div style="font-size:48px;margin-bottom:12px">📡</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Connection Issue</div><div style="font-size:13px;color:#6b8f76">Could not reach the server. <a href="#" onclick="location.reload()" style="color:#f5a623;text-decoration:underline">Tap to retry</a></div></div>';
       } else {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#666"><div style="font-size:48px;margin-bottom:12px">🏪</div><div style="font-size:18px;font-weight:700;margin-bottom:6px">No Restaurants Yet</div><div style="font-size:13px;color:#999">Admin is setting up restaurants. Check back soon!</div></div>';
       }
@@ -1169,13 +1169,13 @@ function buildRestaurantModal(r, menu) {
       <button onclick="closeModal('restaurantModal')" style="position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.3);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Close">✕</button>
       <div style="font-size:52px;margin-bottom:12px">${cuisineEmoji(r.cuisine)}</div>
       <h2 id="restaurantModalTitle" style="font-size:24px;font-weight:800;margin-bottom:4px">${r.name}</h2>
-      <p style="color:#a5d6a7">${r.cuisine || ''}</p>
+      <p style="color:#9fc9a8">${r.cuisine || ''}</p>
       <div style="display:flex;gap:16px;margin-top:12px;font-size:14px;flex-wrap:wrap">
         ${r.rating ? `<span style="color:var(--gold,#ffc107)">⭐ ${r.rating}</span>` : ''}
         ${r.area ? `<span>📍 ${r.area}</span>` : ''}
-        ${isOpen !== undefined ? `<span style="color:${isOpen?'#4caf50':'#ef5350'}">${isOpen?'● Open':'● Closed'}</span>` : ''}
+        ${isOpen !== undefined ? `<span style="color:${isOpen?'#34d399':'#ef5350'}">${isOpen?'● Open':'● Closed'}</span>` : ''}
       </div>
-      <div style="margin-top:12px;background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:8px 12px;font-size:13px;color:#4caf50">
+      <div style="margin-top:12px;background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:8px 12px;font-size:13px;color:#ffc34d">
         ✅ Menu prices are EXACTLY as in restaurant. No markup.
       </div>
     </div>
@@ -1186,9 +1186,9 @@ function buildRestaurantModal(r, menu) {
         <div style="font-size:14px;color:#999">This restaurant hasn't added their menu yet. Check back soon!</div>
       </div>
     ` : `
-    <div style="display:flex;height:calc(85vh - 220px);overflow:hidden">
+    <div class="rest-menu-layout">
       <!-- Category Sidebar -->
-      <div style="width:160px;background:var(--surface-mid,#122019);border-right:1px solid rgba(76,175,80,0.18);overflow-y:auto;padding:12px 0;flex-shrink:0">
+      <div class="rest-menu-sidebar">
         ${menu.map(cat => `
           <div class="menu-sidebar-item" onclick="scrollToCategory('mcat-${cat.category_id}')" id="sidebar-${cat.category_id}">
             ${cat.emoji || ''} ${cat.category_name}
@@ -1196,7 +1196,7 @@ function buildRestaurantModal(r, menu) {
         `).join('')}
       </div>
       <!-- Menu Items -->
-      <div style="flex:1;overflow-y:auto;padding:16px" id="menuContent">
+      <div class="rest-menu-content" id="menuContent">
         ${menu.map(cat => `
           <div id="mcat-${cat.category_id}" style="margin-bottom:8px">
             <h3 class="menu-category-title">${cat.emoji || ''} ${cat.category_name}</h3>
@@ -1209,17 +1209,17 @@ function buildRestaurantModal(r, menu) {
               }).replace(/'/g, '&#39;');
               return `
               <div class="menu-item" style="${!avail ? 'opacity:0.5;pointer-events:none;' : ''}">
-                <div style="flex:1">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                    <span style="font-size:12px;${item.is_veg ? 'color:#4caf50' : 'color:#ef5350'}">⬛</span>
-                    ${!avail ? '<span style="background:rgba(239,83,80,0.15);color:#ef5350;font-size:10px;padding:2px 8px;border-radius:100px;font-weight:700">NOT AVAILABLE</span>' : ''}
+                <div class="menu-item-left">
+                  <div class="menu-item-tags">
+                    <span class="veg-dot ${item.is_veg ? 'veg' : 'nonveg'}"></span>
+                    ${!avail ? '<span class="not-avail-tag">NOT AVAILABLE</span>' : ''}
                   </div>
                   <div class="menu-item-name">${item.name}</div>
                   ${item.description ? `<div class="menu-item-desc">${item.description}</div>` : ''}
                   <div class="menu-item-price">₹${item.price}</div>
                 </div>
-                <div style="text-align:center;min-width:80px">
-                  <div style="font-size:32px;margin-bottom:8px">${cat.emoji || cuisineEmoji(cat.category_name)}</div>
+                <div class="menu-item-side">
+                  <div class="menu-item-emoji">${cat.emoji || cuisineEmoji(cat.category_name)}</div>
                   <div id="addControl-${iid}">
                     ${avail ? `<button class="add-btn" onclick='addToCart(${itemData})' id="addBtn-${iid}">ADD</button>` : ''}
                   </div>
@@ -1991,6 +1991,8 @@ let pendingOffer = null;
 
 function playRingtone() {
   stopRingtone();
+  // Native app: play the phone's ACTUAL default ringtone (loop) via CallPlugin.
+  if (window.__thookuNativeRingtone && window.__thookuNativeRingtone('play')) return;
   if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   // Soft ascending chime (C5-E5-G5-C6) instead of a harsh dual-tone beep.
@@ -2017,6 +2019,7 @@ function playRingtone() {
   }, 2800);
 }
 function stopRingtone() {
+  if (window.__thookuNativeRingtone) window.__thookuNativeRingtone('stop');
   if (_ringtoneInterval) { clearInterval(_ringtoneInterval); _ringtoneInterval = null; }
 }
 
@@ -2360,7 +2363,7 @@ function renderOrderList(orders) {
     var items = (o.items||[]).map(function(i){return esc(i.name)+' ×'+i.qty;}).join(', ');
     var trackBtn = status !== 'cancelled' && status !== 'delivered'
       ? '<button class="btn-sm" style="background:var(--accent);color:#fff" onclick="openOrderTracking(\''+oid+'\')">Track</button>'
-      : '<button class="btn-sm" style="background:rgba(76,175,80,.1);color:var(--accent);border:1px solid rgba(76,175,80,.3)" onclick="reorder(\''+oid+'\',\''+esc(o.restaurant_id||'')+'\')">Reorder</button>';
+      : '<button class="btn-sm" style="background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.3)" onclick="reorder(\''+oid+'\',\''+esc(o.restaurant_id||'')+'\')">Reorder</button>';
     return '<div class="order-card-h">'+
       '<div class="order-hd"><span class="oid">'+oid+'</span><span class="rest-name">🏪 '+rest+'</span><span class="date">'+time+'</span></div>'+
       '<div class="order-items-h">'+items+'</div>'+

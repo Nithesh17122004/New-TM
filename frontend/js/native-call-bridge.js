@@ -61,6 +61,27 @@
   registerDeviceToken();
   window.addEventListener('thooku:login', registerDeviceToken);
 
+  // Native ringtone for in-foreground incoming calls: use the phone's REAL
+  // default ringtone instead of the Web-Audio chime. The pages call
+  // window.__thookuNativeRingtone(play|stop) via their existing playRingtone /
+  // stopRingtone hooks; the web chime remains the fallback in a plain browser.
+  window.__thookuNativeRingtone = function (action) {
+    if (!ThookuCalls) return false;
+    if (action === 'play') {
+      ThookuCalls.playRingtone().then(function () {
+        if (window.__thookuRingtonePlaying) window.__thookuRingtonePlaying();
+      }).catch(function (e) {
+        console.warn('Native ringtone failed, using web chime', e);
+      });
+      return true; // web chime already stopped by the caller; native takes over
+    }
+    if (action === 'stop') {
+      ThookuCalls.stopRingtone().catch(function (e) { console.warn(e); });
+      return true;
+    }
+    return false;
+  };
+
   ThookuCalls.addListener('incomingCallAnswered', function (data) {
     // data: { callId, orderId, callerName, callerRole }
     fetch(API_BASE + '/push/pending-offer/' + encodeURIComponent(data.callId), {
