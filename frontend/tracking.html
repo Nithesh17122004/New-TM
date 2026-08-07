@@ -213,6 +213,7 @@ var map, riderMarker, restaurantMarker, customerMarker, routeLine;
 var currentRiderPos = null, targetRiderPos = null;
 var animStart = null, animDuration = 3000;
 var socket = null, pollInterval = null;
+var pendingRiderLoc = null; // buffers a location_update that arrives before initMap() has run
 var lastStatus = '';
 var refundTimer = null;
 var confirmDeliveryShown = false;
@@ -289,6 +290,12 @@ function initMap(rLat,rLng,cLat,cLng) {
   currentRiderPos = {lat:rLat,lng:rLng};
   routeLine = L.polyline([[rLat,rLng],[cLat,cLng]],
     {color:'#ff9800',weight:3,opacity:.7}).addTo(map);
+
+  // Apply any location_update that arrived before the marker existed
+  if(pendingRiderLoc){
+    var _p = pendingRiderLoc; pendingRiderLoc = null;
+    animateRider(_p.lat,_p.lng);
+  }
 
   map.fitBounds([[rLat,rLng],[cLat,cLng]],{padding:[50,50]});
   updateDistance(rLat,rLng,cLat,cLng);
@@ -437,7 +444,10 @@ function initSocket(){
     socket.on('connect',function(){
       if(ORDER_ID) socket.emit('join_order',{order_id:ORDER_ID});
     });
-    socket.on('location_update',function(data){animateRider(data.lat,data.lng);});
+    socket.on('location_update',function(data){
+      if(!riderMarker){ pendingRiderLoc = {lat:data.lat,lng:data.lng}; return; }
+      animateRider(data.lat,data.lng);
+    });
     socket.on('order_status_update',function(data){
       if(data.status) updateSteps(data.status, data);
       if(data.message) showToast(data.message,'success');
@@ -652,12 +662,14 @@ function createPeerConnection(oid, onRemoteStream){
 function playRemoteStream(stream){
   if(!stream) return;
   if(!stream.getAudioTracks().length){ console.warn('No audio tracks in remote stream'); return; }
-  try{
-    if(!_audioCtx||_audioCtx.state==='closed') _audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(_audioCtx.state==='suspended') _audioCtx.resume();
-    var src=_audioCtx.createMediaStreamSource(stream);
-    src.connect(_audioCtx.destination);
-  }catch(e){ console.warn('AudioContext error:',e); }
+  // A real <audio> element is required to reliably play remote WebRTC audio
+  // in WebKit-based WebViews (iOS/Android) - routing purely through
+  // AudioContext.createMediaStreamSource() silently produces no sound there.
+  var el = document.getElementById('remoteCallAudio');
+  if(el){
+    el.srcObject = stream;
+    el.play().catch(function(e){ console.warn('Remote audio play() blocked:', e); });
+  }
 }
 
 function showCallOverlay(name, status){
@@ -946,6 +958,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </style>
 
 <!-- ===== ACTIVE CALL SCREEN (WhatsApp-style, full screen) ===== -->
+<audio id="remoteCallAudio" autoplay playsinline style="display:none"></audio>
 <div id="callOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0f2016 0%,#153a20 60%,#1B7A3D 130%);flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 50px;color:#fff;font-family:inherit">
   <div></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:16px">

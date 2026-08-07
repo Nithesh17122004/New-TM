@@ -16,7 +16,13 @@ class MainActivity : BridgeActivity() {
         registerPlugin(CallPlugin::class.java)
         registerPlugin(GoogleAuth::class.java)
         super.onCreate(savedInstanceState)
+        // Critical for in-app WebRTC calls: without this, Android WebView blocks
+        // both <audio> playback and AudioContext output that is not started
+        // from a direct touch gesture, so callers/hearers hear silence even
+        // though the call is connected.
+        bridge?.webView?.settings?.mediaPlaybackRequiresUserGesture = false
         requestNotificationPermissionIfNeeded()
+        requestLocationPermissionIfNeeded()
         handleAnsweredCallIntent(intent)
     }
 
@@ -34,6 +40,31 @@ class MainActivity : BridgeActivity() {
         if (!granted) {
             ActivityCompat.requestPermissions(
                 this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001
+            )
+        }
+    }
+
+    /**
+     * The rider dashboard calls navigator.geolocation (watchPosition). On
+     * Android 6+ declaring ACCESS_FINE_LOCATION in the manifest is not enough —
+     * the app must hold the runtime permission or the WebView silently fails
+     * and the GPS indicator shows "GPS Error" forever with no prompt.
+     */
+    private fun requestLocationPermissionIfNeeded() {
+        val fine = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!fine && !coarse) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                2002
             )
         }
     }

@@ -939,12 +939,14 @@ function hideIncomingCall() {
 function playRemoteStream(stream) {
   if (!stream) return;
   if (!stream.getAudioTracks().length) { console.warn('No audio tracks in remote stream'); return; }
-  try {
-    if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    var src = _audioCtx.createMediaStreamSource(stream);
-    src.connect(_audioCtx.destination);
-  } catch(e) { console.warn('AudioContext error:', e); }
+  // A real <audio> element is required to reliably play remote WebRTC audio
+  // in WebKit-based WebViews (iOS/Android) - routing purely through
+  // AudioContext.createMediaStreamSource() silently produces no sound there.
+  var el = document.getElementById('remoteCallAudio');
+  if (el) {
+    el.srcObject = stream;
+    el.play().catch(function(e){ console.warn('Remote audio play() blocked:', e); });
+  }
 }
 
 function showCallOverlay(name, status) {
@@ -1384,6 +1386,7 @@ function showToast(msg, type='success') {
 </div>
 
 <!-- ===== ACTIVE CALL BAR ===== -->
+<audio id="remoteCallAudio" autoplay playsinline style="display:none"></audio>
 <div id="callOverlay" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;z-index:99998;background:var(--card);border-radius:16px;padding:14px 16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;max-width:400px;margin:0 auto">
   <div style="display:flex;align-items:center;gap:12px;width:100%">
     <div style="font-size:28px">🔊</div>
