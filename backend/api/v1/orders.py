@@ -15,6 +15,7 @@ import time
 import logging
 import math
 import json
+from datetime import datetime, timezone, timedelta
 
 import jwt
 from flask import Blueprint, current_app, jsonify, request
@@ -26,6 +27,31 @@ logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "thooku-madurai-secret-key-2026")
 NO_RIDER_REFUND_TIMEOUT = 1800  # 30 min in seconds
+
+# Mandatory closing window (IST): 11:30 PM – 7:30 AM — all restaurants closed
+NIGHT_CLOSE_MIN = 23 * 60 + 30   # 23:30
+NIGHT_OPEN_MIN  = 7 * 60 + 30    # 07:30
+
+
+def _ist_now():
+    """Current time in IST (UTC+5:30) without tz database dependency."""
+    return datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+
+
+def _is_night_closed(now=None):
+    """True when all restaurants must be closed (11:30 PM – 7:30 AM IST)."""
+    now = now or _ist_now()
+    minutes = now.hour * 60 + now.minute
+    return minutes >= NIGHT_CLOSE_MIN or minutes < NIGHT_OPEN_MIN
+
+
+def _night_closed_payload():
+    now = _ist_now()
+    return {
+        "message": "All restaurants are closed (11:30 PM – 7:30 AM). Orders resume at 7:30 AM.",
+        "night_closed": True,
+        "closed_until": now.strftime("%Y-%m-%d") + " 07:30 IST" if now.hour >= 23 else "07:30 IST today",
+    }
 
 
 def get_db():
@@ -333,6 +359,9 @@ def place_order():
     db = get_db()
     if db is None:
         return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    if _is_night_closed():
+        return jsonify({"success": False, **(_night_closed_payload())}), 400
 
     restaurant = db.restaurants.find_one({"_id": data["restaurant_id"]})
     if restaurant is None:
@@ -730,6 +759,17 @@ def reject_delivery(order_id):
 
     offer_result = _offer_to_next_rider(db, order_id)
 
+    # Tell the customer a rider declined and another is being found
+    try:
+        from app import socketio
+        socketio.emit("order_status_update", {
+            "order_id": order_id,
+            "status": "accepted",
+            "message": "A delivery partner declined. Looking for another rider...",
+        }, room=f"order_{order_id}")
+    except Exception:
+        pass
+
     response_data = {
         "order_id": order_id,
         "rejected_by": rider_id,
@@ -981,10 +1021,31 @@ def cancel_order(order_id):
     )
 
     # Refund if payment was made
+    refunded = False
     if order.get("payment_status") in ("paid", "completed"):
         db.orders.update_one({"_id": order_id}, {"$set": {"payment_status": "refunded"}})
+        refunded = True
 
-    return jsonify({"success": True, "message": "Order cancelled"}), 200
+    # Notify restaurant and any rider room about cancellation
+    try:
+        from app import socketio
+        socketio.emit("order_status_update", {
+            "order_id": order_id,
+            "status": "cancelled",
+            "message": "Order cancelled by customer — refund initiated",
+        }, room=f"order_{order_id}")
+        socketio.emit("order_status_update", {
+            "order_id": order_id,
+            "status": "cancelled",
+        }, room=f"restaurant_{order.get('restaurant_id', '')}")
+    except Exception:
+        pass
+
+    return jsonify({
+        "success": True,
+        "message": "Order cancelled",
+        "refunded": refunded,
+    }), 200
 
 
 # ── Request rider reassignment (customer asks "find another rider") ──────────

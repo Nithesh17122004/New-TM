@@ -102,11 +102,18 @@ def list_restaurants():
     if db is None:
         return jsonify({"success": False, "message": "Database unavailable"}), 503
 
+    from api.v1.orders import _is_night_closed
+    night_closed = _is_night_closed()
+
     docs = list(db.restaurants.find({"is_open": True}))
     result = []
     for doc in docs:
         _to_str_id(doc)
-        result.append(_public_restaurant(doc))
+        pub = _public_restaurant(doc)
+        if night_closed:
+            pub["is_open"] = False
+            pub["night_closed"] = True
+        result.append(pub)
 
     return jsonify({"success": True, "data": result}), 200
 
@@ -118,6 +125,9 @@ def get_restaurant(restaurant_id):
     if db is None:
         return jsonify({"success": False, "message": "Database unavailable"}), 503
 
+    from api.v1.orders import _is_night_closed
+    night_closed = _is_night_closed()
+
     doc = db.restaurants.find_one({"_id": restaurant_id})
     if doc is None:
         return jsonify({"success": False, "message": "Restaurant not found"}), 404
@@ -126,6 +136,10 @@ def get_restaurant(restaurant_id):
     doc.pop("password_hash", None)
     doc.pop("username", None)
     doc.pop("upi_id", None)
+
+    doc["night_closed"] = night_closed
+    if night_closed:
+        doc["is_open"] = False
 
     return jsonify({"success": True, "data": doc}), 200
 
@@ -172,6 +186,14 @@ def toggle_status(restaurant_id):
         return jsonify({"success": False, "message": "Restaurant not found"}), 404
 
     body = request.get_json(silent=True) or {}
+    from api.v1.orders import _is_night_closed
+    if "is_open" in body and bool(body["is_open"]) and _is_night_closed():
+        return jsonify({
+            "success": False,
+            "message": "All restaurants are closed (11:30 PM – 7:30 AM). Cannot open now.",
+            "night_closed": True,
+        }), 400
+
     if "is_open" in body:
         new_status = bool(body["is_open"])
     else:

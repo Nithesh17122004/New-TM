@@ -226,6 +226,12 @@ def accept_delivery(order_id):
     try:
         from app import socketio
         socketio.emit("order_taken", {"order_id": order_id}, room="riders")
+        # Tell the customer their rider has been assigned
+        socketio.emit("order_status_update", {
+            "order_id": order_id,
+            "status": "preparing",
+            "message": "Delivery partner assigned — " + (rider.get("name", "Your rider")),
+        }, room=f"order_{order_id}")
     except Exception:
         pass
 

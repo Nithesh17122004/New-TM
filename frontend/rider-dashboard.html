@@ -171,6 +171,7 @@
 <header class="rider-header">
   <div class="rider-brand"><span>🏍️</span> Rider</div>
   <div style="display:flex;align-items:center;gap:10px">
+    <a href="index.html" title="Back to site" style="color:var(--dim);text-decoration:none;font-size:12px;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:6px 10px"><i class="fas fa-arrow-left"></i> Site</a>
     <span id="gpsIndicator" style="font-size:11px;color:var(--dim);font-weight:600">📡 GPS Off</span>
     <div class="rider-profile">
       <div class="rider-info">
@@ -472,6 +473,18 @@ let pendingCallOffer = null;
 let HISTORY_ORDERS = [];
 
 function logout() {
+  // Auto-offline on logout so no order offers/notifications arrive
+  try {
+    const a = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+    if (a.token) {
+      fetch(`${API_BASE}/riders/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + a.token },
+        body: JSON.stringify({ is_online: false })
+      }).catch(function(){});
+    }
+  } catch (e) {}
+  if (socket) { try { socket.disconnect(); } catch (e) {} }
   localStorage.removeItem('tm_auth');
   window.location.href = 'login.html';
 }
@@ -1321,6 +1334,18 @@ function uploadDoc(type) {
 }
 
 function doLogout() {
+  // Auto-offline on logout so no order offers/notifications arrive
+  try {
+    const a = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+    if (a.token) {
+      fetch(`${API_BASE}/riders/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + a.token },
+        body: JSON.stringify({ is_online: false })
+      }).catch(function(){});
+    }
+  } catch (e) {}
+  if (socket) { try { socket.disconnect(); } catch (e) {} }
   localStorage.removeItem('tm_auth'); localStorage.removeItem('tm_role');
   window.location.href = 'login.html';
 }

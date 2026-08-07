@@ -119,6 +119,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-left">
+      <a href="index.html" style="color:var(--dim);font-size:16px;text-decoration:none;display:flex;align-items:center;gap:6px" title="Back to site">
+        <i class="fas fa-arrow-left"></i>
+      </a>
       <span class="topbar-logo">🛵 THOOKU</span>
       <div class="live-badge"><span class="dot"></span>LIVE</div>
     </div>
@@ -140,6 +143,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
       <div class="step-item" id="s-delivered"><div class="step-circle">🏠</div><div class="step-label">Delivered</div></div>
     </div>
     <div class="status-text" id="statusText">Order Confirmed</div>
+    <div style="display:none;margin-top:10px" id="cancelRow">
+      <button onclick="cancelOrder()" style="background:rgba(239,83,80,.1);color:#ef5350;border:1px solid rgba(239,83,80,.4);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="fas fa-times-circle"></i> Cancel Order &amp; Get Refund
+      </button>
+    </div>
   </div>
 
   <!-- MAIN: MAP -->
@@ -397,6 +405,9 @@ function updateSteps(status, orderData){
   if (status === 'accepted' && !order.rider_id) label = 'Looking for delivery partner...';
   if (status === 'pending') label = 'Waiting for restaurant to accept...';
   setText('statusText',label);
+  // Cancel + refund button only while cancellable (pending / accepted)
+  var cancelRow=document.getElementById('cancelRow');
+  if(cancelRow) cancelRow.style.display=(status==='pending'||status==='accepted')?'block':'none';
   if(status==='delivered'){
     showConfirmDelivery();
   }
@@ -429,10 +440,34 @@ async function confirmDelivery(){
     } else {
       showToast('Already confirmed!','success');
       document.getElementById('confirmOverlay').style.display='none';
+      document.getElementById('riderOverlay').style.display='none';
     }
   }catch(e){
     showToast('Delivery confirmed!','success');
     document.getElementById('confirmOverlay').style.display='none';
+  }
+}
+
+// ── CANCEL ORDER (auto refunds if already paid) ──────────────
+
+async function cancelOrder(){
+  if(!ORDER_ID) return;
+  if(!token){ showToast('Please login to cancel','warning'); return; }
+  if(!confirm('Cancel this order? If you already paid, your money is refunded automatically.')) return;
+  try{
+    var res=await fetch(API+'/orders/'+ORDER_ID+'/cancel',{method:'PATCH',headers:HDR});
+    var d=await res.json();
+    if(d.success){
+      showToast(d.message+(d.refunded?' — Refund processed!':' — No charge taken.'),'success');
+      var cancelRow=document.getElementById('cancelRow');
+      if(cancelRow) cancelRow.style.display='none';
+      setText('statusText','Order Cancelled');
+      document.getElementById('statusText').style.color='#ef5350';
+    } else {
+      showToast(d.message||'Could not cancel order','error');
+    }
+  }catch(e){
+    showToast('Could not cancel order','error');
   }
 }
 

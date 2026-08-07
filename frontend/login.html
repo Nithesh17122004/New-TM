@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <!-- GIS disabled — not supported in Capacitor WebView; using native plugin only -->
+  <!-- Google Identity Services loaded dynamically for web; native plugin used inside Capacitor APK -->
   <style>
     :root {
       --bg: #060f08;
@@ -302,6 +302,11 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <div class="login-wrapper">
+  <!-- Back to site -->
+  <a href="index.html" class="back-to-site" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;color:var(--text-muted);text-decoration:none;font-size:14px;font-weight:600;transition:color .2s;border:1px solid var(--border);border-radius:100px;padding:8px 16px;background:rgba(13,92,63,0.15)">
+    <i class="fas fa-arrow-left"></i> Back to Site
+  </a>
+
   <!-- Brand -->
   <div class="brand">
     <img src="img/logo.png" alt="Thooku Madurai Logo" style="width:90px;height:90px;object-fit:contain;margin-bottom:10px;filter:drop-shadow(0 4px 16px rgba(245,166,35,0.4));animation:pulse 2s ease infinite;">
@@ -482,26 +487,69 @@ wireOTPInputs('cotp');
 // ═══════════════════════════
 
 // ═══════════════════════════
-// GOOGLE Sign-In (Customer) — Native plugin only (GIS disabled — not supported in WebView)
+// GOOGLE Sign-In (Customer) — native plugin on APK, GIS (web) fallback
 // ═══════════════════════════
+
+const GOOGLE_CLIENT_ID = '849711418902-7reguj59f9au1c48ko8boh3eaprp0rng.apps.googleusercontent.com';
+
+function loadGisScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.defer = true;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load Google Sign-In'));
+    document.head.appendChild(s);
+  });
+}
+
+function gisInit() {
+  if (!window.google?.accounts?.id) return;
+  window.google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: (resp) => {
+      if (resp?.credential) googleLogin(resp.credential);
+      else showToast('Google sign-in failed', 'error');
+    },
+    auto_select: false,
+  });
+}
 
 async function handleGoogleSignIn() {
   const hasCapacitor = typeof window.Capacitor !== 'undefined';
-  const hasGoogleAuth = !!window.Capacitor?.Plugins?.GoogleAuth;
   const ga = window.Capacitor?.Plugins?.GoogleAuth;
-  if (!ga) {
-    showToast('Google Sign-In not available (Capacitor=' + hasCapacitor + ', Plugin=' + hasGoogleAuth + ')', 'error');
+  if (ga) {
+    // APK: native plugin path
+    try {
+      await ga.initialize();
+      const result = await ga.signIn();
+      const credential = result.authentication?.idToken || result.idToken;
+      if (!credential) { showToast('Google sign-in failed', 'error'); return; }
+      await googleLogin(credential);
+    } catch (e) {
+      console.error('GoogleAuth error:', e);
+      showToast(e.message || 'Google sign-in failed', 'error');
+    }
     return;
   }
+  // Web: Google Identity Services popup flow
   try {
-    await ga.initialize();
-    const result = await ga.signIn();
-    const credential = result.authentication?.idToken || result.idToken;
-    if (!credential) { showToast('Google sign-in failed', 'error'); return; }
-    await googleLogin(credential);
+    await loadGisScript();
+    gisInit();
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        window.google.accounts.id.renderButton(
+          document.getElementById('gSignInWrapper') || document.body,
+          { theme: 'filled_black', size: 'large', shape: 'pill', width: 280 }
+        );
+        showToast('Click the Google button to continue', 'info');
+      }
+    });
   } catch (e) {
-    console.error('GoogleAuth error:', e);
-    showToast(e.message || 'Google sign-in failed', 'error');
+    console.error('GIS error:', e);
+    showToast(e.message || 'Google sign-in unavailable on this browser', 'error');
   }
 }
 
@@ -557,6 +605,14 @@ async function loginRestaurant() {
     };
     localStorage.setItem('tm_auth', JSON.stringify(auth));
     showToast('Welcome, ' + auth.name, 'success');
+    // Auto-open the restaurant when logged in (logout auto-closes)
+    try {
+      await fetch(`${API_BASE}/restaurants/${auth.restaurant_id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
+        body: JSON.stringify({ is_open: true })
+      });
+    } catch (e) { console.warn('Auto-open failed', e); }
     setTimeout(() => window.location.href = 'restaurant-dashboard.html', 800);
   } catch (err) {
     showToast(err.message, 'error');
@@ -592,6 +648,14 @@ async function loginRider() {
     };
     localStorage.setItem('tm_auth', JSON.stringify(auth));
     showToast('Welcome, ' + auth.name + '!', 'success');
+    // Auto-go-online when rider logs in (logout auto-offlines)
+    try {
+      await fetch(`${API_BASE}/riders/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
+        body: JSON.stringify({ is_online: true })
+      });
+    } catch (e) { console.warn('Auto-online failed', e); }
     setTimeout(() => window.location.href = 'rider-dashboard.html', 800);
   } catch (err) {
     showToast(err.message, 'error');

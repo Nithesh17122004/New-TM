@@ -292,9 +292,10 @@ input,select,textarea{font-family:'Inter',sans-serif}
   <div class="topbar">
     <div class="topbar-title" id="pageTitle">Dashboard</div>
     <div class="topbar-right">
+      <a href="index.html" style="color:var(--dim);text-decoration:none;font-size:12px;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:6px 10px" title="Back to site"><i class="fas fa-arrow-left"></i> Site</a>
       <span class="live-dot"></span>
       <span class="topbar-time" id="topbarTime"></span>
-      <button onclick="localStorage.removeItem('tm_auth');window.location.href='login.html'" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--dim);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+      <button onclick="doLogout()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--dim);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
     </div>
   </div>
 
@@ -617,6 +618,11 @@ function fetchRestaurantProfile(){
     .then(function(d){
       if(d.success&&d.data){
         var open=!!d.data.is_open;
+        // Logged-in dashboard ⇒ keep restaurant open so it can take orders
+        if(!open && !d.data.night_closed){
+          apiBg('/restaurants/'+RID+'/status','PATCH',{is_open:true});
+          open=true;
+        }
         var cb=document.getElementById('restOpenToggle');
         var lbl=document.getElementById('openLabel');
         if(cb)cb.checked=open;
@@ -629,7 +635,19 @@ function toggleRestOpen(){
   var lbl=document.getElementById('openLabel');
   if(lbl){lbl.textContent=open?'OPEN':'CLOSED';lbl.className='open-label'+(open?' open-text':'');}
   showToast(open?'Restaurant is now OPEN':'Restaurant is now CLOSED',open?'success':'warning');
-  apiBg('/restaurants/'+RID+'/status','PATCH',{is_open:open});
+  if(DEMO||!token||!RID)return;
+  fetch(API+'/restaurants/'+RID+'/status',{method:'PATCH',headers:HDR,body:JSON.stringify({is_open:open})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d&&d.success===false&&d.message){
+        // Revert UI on server rejection (e.g. night-closed window)
+        var cb=document.getElementById('restOpenToggle');
+        var l2=document.getElementById('openLabel');
+        if(cb)cb.checked=!open;
+        if(l2){l2.textContent=open?'CLOSED':'OPEN';l2.className='open-label'+(open?'':' open-text');}
+        showToast(d.message||'Could not change status','error');
+      }
+    }).catch(function(){});
 }
 
 /* ============================================================
@@ -1171,6 +1189,15 @@ function showToast(msg,type){
    LOGOUT
    ============================================================ */
 function doLogout(){
+  const auth = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+  // Auto-close the restaurant on logout so no new orders come in
+  if (auth.token && auth.restaurant_id) {
+    fetch(`${API}/restaurants/${auth.restaurant_id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
+      body: JSON.stringify({ is_open: false })
+    }).catch(function(){});
+  }
   localStorage.removeItem('tm_auth');localStorage.removeItem('tm_role');
   window.location.href='login.html';
 }
