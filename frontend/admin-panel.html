@@ -1333,8 +1333,8 @@ async function doAssignRider() {
   const btn = document.getElementById('doAssignBtn');
   setLoading(btn, true);
   try {
-    await apiFetch(`/admin/orders/${currentAssignOrderId}/assign-rider`, {
-      method: 'POST', body: JSON.stringify({ rider_id: riderId })
+    await apiFetch(`/admin/orders/${currentAssignOrderId}/assign`, {
+      method: 'PATCH', body: JSON.stringify({ rider_id: riderId })
     });
     closeModal('assignRiderModal');
     showToast('Rider assigned!', 'success');

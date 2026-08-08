@@ -1180,6 +1180,33 @@ footer {
 .veg-dot.nonveg { border-color: #ef5350; background: rgba(239,83,80,0.15); }
 .not-avail-tag { background: rgba(239,83,80,0.15); color: #ef5350; font-size: 10px; padding: 2px 8px; border-radius: 100px; font-weight: 700; }
 
+/* ── Closed restaurant card (grey) ── */
+.restaurant-card-closed {
+  filter: grayscale(1);
+  opacity: 0.55;
+  cursor: default;
+  border-color: rgba(255,255,255,0.08);
+}
+.restaurant-card-closed:hover {
+  transform: none;
+  box-shadow: none;
+}
+.rest-closed-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(239,83,80,0.15);
+  color: #ef5350;
+  border: 1px solid rgba(239,83,80,0.35);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  z-index: 2;
+}
+.restaurant-card { position: relative; }
+
 @media (max-width: 768px) {
   #cartDrawer, .cart-drawer { width: 100% !important; border-left: none; padding-top: 56px; z-index: 1100; }
   #cartOverlay { z-index: 1050; }

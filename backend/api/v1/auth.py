@@ -90,6 +90,13 @@ def restaurant_login():
             return jsonify({"success": False, "message": "OTP phone does not match the registered restaurant phone"}), 401
 
     restaurant_id = str(restaurant["_id"])
+
+    # Auto-open the restaurant on login (mirrors the auto-close on logout),
+    # unless it's within mandatory night-closed hours (11:30 PM – 7:30 AM).
+    from api.v1.orders import _is_night_closed
+    if not _is_night_closed():
+        db.restaurants.update_one({"_id": restaurant["_id"]}, {"$set": {"is_open": True}})
+
     token = _make_token(
         {
             "user_id": restaurant_id,
@@ -163,6 +170,12 @@ def rider_login():
 
     rider_id = str(rider["_id"])
     rider_phone = str(rider.get("phone", "")).strip()
+
+    # Auto-online the rider on login (mirrors the auto-offline on logout).
+    db.delivery_partners.update_one(
+        {"_id": rider["_id"]}, {"$set": {"is_online": True, "is_available": True}}
+    )
+
     token = _make_token(
         {
             "user_id": rider_id,

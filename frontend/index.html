@@ -1000,12 +1000,14 @@ function renderRestaurants(data) {
   }
   grid.innerHTML = data.map((r, i) => {
     const id = r._id || r.id;
-    const isOpen = r.is_open !== undefined ? r.is_open : r.isOpen;
+    const isOpen = r.is_open !== undefined ? r.is_open : (r.isOpen !== undefined ? r.isOpen : true);
     const isVeg = r.is_veg || r.isVeg || false;
     const tags = r.tags || [];
     const distance = r.distance ? (r.distance < 1 ? (r.distance*1000).toFixed(0)+'m' : r.distance.toFixed(1)+'km') : '';
+    const closedCls = isOpen ? '' : 'restaurant-card-closed';
+    const closedBadge = isOpen ? '' : '<div class="rest-closed-badge">CLOSED</div>';
     return `
-    <article class="restaurant-card animate-fadeup" style="animation-delay:${i*0.05}s"
+    <article class="restaurant-card animate-fadeup ${closedCls}" style="animation-delay:${i*0.05}s"
       onclick="openRestaurant('${id}')"
       role="button" tabindex="0" aria-label="Open ${r.name}"
       onkeypress="if(event.key==='Enter') openRestaurant('${id}')">
@@ -1017,11 +1019,12 @@ function renderRestaurants(data) {
           <div class="restaurant-rating-line">
             <span class="rating-star"><i class="fas fa-star" style="color:#ffc107;font-size:11px"></i> ${r.rating || '—'}</span>
             <span class="restaurant-dot">•</span>
-            <span>${r.eta || '30-40 min'}</span>
+            <span>${isOpen ? (r.eta || '30-40 min') : (r.night_closed ? 'Opens 7:30 AM' : 'Closed now')}</span>
             ${distance ? `<span class="restaurant-dot">•</span><span>${distance}</span>` : ''}
           </div>
         </div>
       </div>
+      ${closedBadge}
       ${isVeg ? '<div class="rest-veg-tag"><i class="fas fa-leaf"></i> Pure Veg</div>' : ''}
       ${tags.length ? `<div class="rest-tags">${tags.map(t => `<span class="rest-tag">${t}</span>`).join('')}</div>` : ''}
     </article>`;
@@ -1145,7 +1148,8 @@ async function openRestaurant(id) {
 function buildRestaurantModal(r, menu) {
   const modal = document.getElementById('restaurantModal');
   const hasMenu = Array.isArray(menu) && menu.length > 0;
-  const isOpen = r.is_open !== undefined ? r.is_open : r.isOpen;
+  const isOpen = r.is_open !== undefined ? r.is_open : (r.isOpen !== undefined ? r.isOpen : true);
+  const closedMsg = r.night_closed ? 'Opens at 7:30 AM' : 'Currently closed';
 
   modal.querySelector('.modal').innerHTML = `
     <div style="background:linear-gradient(135deg,var(--primary-dark,#0a3d20),var(--primary));padding:32px 24px 24px;position:relative">
@@ -1158,9 +1162,13 @@ function buildRestaurantModal(r, menu) {
         ${r.area ? `<span>📍 ${r.area}</span>` : ''}
         ${isOpen !== undefined ? `<span style="color:${isOpen?'#34d399':'#ef5350'}">${isOpen?'● Open':'● Closed'}</span>` : ''}
       </div>
+      ${isOpen ? `
       <div style="margin-top:12px;background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:8px 12px;font-size:13px;color:#ffc34d">
         ✅ Menu prices are EXACTLY as in restaurant. No markup.
-      </div>
+      </div>` : `
+      <div style="margin-top:12px;background:rgba(239,83,80,0.12);border:1px solid rgba(239,83,80,0.35);border-radius:8px;padding:8px 12px;font-size:13px;color:#ef5350">
+        ⏰ ${closedMsg} — ordering is disabled.
+      </div>`}
     </div>
     ${!hasMenu ? `
       <div style="text-align:center;padding:80px 20px;color:#666">
@@ -1184,7 +1192,7 @@ function buildRestaurantModal(r, menu) {
           <div id="mcat-${cat.category_id}" style="margin-bottom:8px">
             <h3 class="menu-category-title">${cat.emoji || ''} ${cat.category_name}</h3>
             ${cat.items.map(item => {
-              const avail = item.is_available !== false;
+              const avail = item.is_available !== false && isOpen;
               const iid = item.item_id;
               const itemData = JSON.stringify({
                 id: iid, name: item.name, price: item.price,
@@ -1195,7 +1203,7 @@ function buildRestaurantModal(r, menu) {
                 <div class="menu-item-left">
                   <div class="menu-item-tags">
                     <span class="veg-dot ${item.is_veg ? 'veg' : 'nonveg'}"></span>
-                    ${!avail ? '<span class="not-avail-tag">NOT AVAILABLE</span>' : ''}
+                    ${!isOpen ? '<span class="not-avail-tag">CLOSED</span>' : (!item.is_available ? '<span class="not-avail-tag">NOT AVAILABLE</span>' : '')}
                   </div>
                   <div class="menu-item-name">${item.name}</div>
                   ${item.description ? `<div class="menu-item-desc">${item.description}</div>` : ''}

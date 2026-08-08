@@ -97,7 +97,8 @@ def _public_restaurant(doc: dict) -> dict:
 
 @restaurants_bp.route("", methods=["GET"])
 def list_restaurants():
-    """Return all open restaurants with public info only."""
+    """Return all restaurants with public info only. Closed ones are included
+    so the frontend can grey them out (is_open flag tells the client)."""
     db = get_db()
     if db is None:
         return jsonify({"success": False, "message": "Database unavailable"}), 503
@@ -105,16 +106,17 @@ def list_restaurants():
     from api.v1.orders import _is_night_closed
     night_closed = _is_night_closed()
 
-    docs = list(db.restaurants.find({"is_open": True}))
+    docs = list(db.restaurants.find({}))
     result = []
     for doc in docs:
         _to_str_id(doc)
         pub = _public_restaurant(doc)
-        if night_closed:
-            pub["is_open"] = False
-            pub["night_closed"] = True
+        pub["is_open"] = bool(pub.get("is_open", False)) and not night_closed
+        pub["night_closed"] = night_closed
         result.append(pub)
 
+    # Open restaurants first, closed ones after
+    result.sort(key=lambda r: (not bool(r.get("is_open", False)),))
     return jsonify({"success": True, "data": result}), 200
 
 
