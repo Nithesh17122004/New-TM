@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <script src="js/auth-guard.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Thooku Madurai — Madurai's #1 hyperlocal food delivery platform. Order from your favourite local restaurants with exact menu prices, no hidden charges. Fast delivery across Madurai.">
+  <meta name="description" content="Thooku Madurai — Madurai's #1 hyperlocal food delivery platform. Order from your favourite local restaurants with exact menu prices: food + ₹15/km delivery + 15% service charge + GST (5% food / 18% delivery). Fast delivery across Madurai.">
   <meta name="keywords" content="food delivery Madurai, thooku madurai, biryani delivery Madurai, meals delivery Madurai, tiffin delivery Madurai, online food order Madurai">
   <meta name="robots" content="index, follow">
   <meta property="og:title" content="Thooku Madurai — Local Food Delivery">
@@ -119,7 +119,7 @@
         Real Restaurants.<br>
         <span style="color:var(--text-muted); font-size:0.7em;">Delivered to Your Door.</span>
       </h1>
-      <p>Order from local restaurants in Madurai with <strong style="color:var(--accent)">exact menu prices</strong> — no inflation, no hidden charges. Just food + delivery fee (₹15/km) + ₹10 platform fee.</p>
+      <p>Order from local restaurants in Madurai with <strong style="color:var(--accent)">exact menu prices</strong> — no inflation, no hidden charges. Just food price + delivery fee (₹15/km by road route) + 15% service charge + GST (5% food / 18% delivery). Every rupee shown before you pay.</p>
 
       <div class="hero-actions">
         <button class="btn-accent btn-lg" onclick="scrollToRestaurants()" id="orderNowBtn">
@@ -173,14 +173,20 @@
       <div class="feature-card">
         <div class="feature-icon">🚴</div>
         <div class="feature-title">Delivery Fee</div>
-        <div class="feature-desc">Distance-based. Short distance = less fee. Transparent calculation shown before checkout.</div>
+        <div class="feature-desc">₹15 per road-km (shortest driving route, e.g. 1.1 km → ₹16.5). Short distance = less fee. Shown before checkout.</div>
         <div style="margin-top:12px;font-size:18px;font-weight:800;color:var(--accent)">Goes to Rider</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📱</div>
-        <div class="feature-title">Platform Fee</div>
-        <div class="feature-desc">Fixed ₹10 per order. No hidden charges. This is how we keep the service running.</div>
-        <div style="margin-top:12px;font-size:18px;font-weight:800;color:var(--accent)">₹10 Fixed</div>
+        <div class="feature-title">Service Charge</div>
+        <div class="feature-desc">A small percentage of your food + delivery fee (default 15%). This is how we keep the service running.</div>
+        <div style="margin-top:12px;font-size:18px;font-weight:800;color:var(--accent)">15% of Food + Delivery</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧾</div>
+        <div class="feature-title">GST, Included Clearly</div>
+        <div class="feature-desc">Taxes itemised on every bill — 5% GST on food, 18% GST on the delivery fee. No surprises at checkout.</div>
+        <div style="margin-top:12px;font-size:18px;font-weight:800;color:var(--accent)">5% Food + 18% Delivery</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📲</div>
@@ -342,9 +348,9 @@
         <div class="feature-desc">Pay with Google Pay, PhonePe, Paytm UPI, BHIM — safe and instant.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📞</div>
-        <div class="feature-title">Phone Ordering</div>
-        <div class="feature-desc">Call our virtual number. Our agents will place your order. No app needed.</div>
+        <div class="feature-icon">🤝</div>
+        <div class="feature-title">Nearest Rider First</div>
+        <div class="feature-desc">Orders go to the closest available rider — your food is picked up fast and arrives hot.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🏪</div>
