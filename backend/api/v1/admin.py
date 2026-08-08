@@ -688,6 +688,21 @@ def save_settings():
             update["min_delivery_fee"] = max(0.0, float(data["min_delivery_fee"]))
         except (TypeError, ValueError):
             return jsonify({"success": False, "message": "Invalid min_delivery_fee"}), 400
+    if "service_charge_pct" in data:
+        try:
+            update["service_charge_pct"] = max(0.0, float(data["service_charge_pct"]))
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "message": "Invalid service_charge_pct"}), 400
+    if "gst_food_pct" in data:
+        try:
+            update["gst_food_pct"] = max(0.0, float(data["gst_food_pct"]))
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "message": "Invalid gst_food_pct"}), 400
+    if "gst_delivery_pct" in data:
+        try:
+            update["gst_delivery_pct"] = max(0.0, float(data["gst_delivery_pct"]))
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "message": "Invalid gst_delivery_pct"}), 400
     if "support_phone" in data:
         update["support_phone"] = str(data["support_phone"]).strip()
 
@@ -709,4 +724,50 @@ def save_settings():
 @admin_bp.route("/reset-database", methods=["POST"])
 def reset_database_alias():
     return db_reset()
+
+
+# Keep only the named restaurant (default "Madurai Meals"); delete every other
+# restaurant (with embedded menus) and all orders belonging to deleted restaurants.
+@admin_bp.route("/keep-only-restaurant", methods=["POST"])
+def keep_only_restaurant():
+    payload, err = _require_superadmin()
+    if err:
+        return err
+
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    data = request.get_json(silent=True) or {}
+    keep_name = str(data.get("name", "Madurai Meals")).strip()
+
+    from pymongo import ASCENDING
+    kept_rest = db.restaurants.find_one(
+        {"name": {"$regex": keep_name, "$options": "i"}},
+        sort=[("_id", ASCENDING)],
+    )
+    if kept_rest is None:
+        return jsonify({"success": False, "message": f"Restaurant '{keep_name}' not found"}), 404
+
+    keep_id = str(kept_rest["_id"])
+    deleted_restaurants = db.restaurants.delete_many(
+        {"_id": {"$ne": keep_id}}
+    ).deleted_count
+    # Remove orders belonging to any other restaurants (keep Madurai Meals' orders)
+    deleted_orders = db.orders.delete_many(
+        {"restaurant_id": {"$ne": keep_id}}
+    ).deleted_count
+
+    return jsonify({
+        "success": True,
+        "message": f"Kept only '{kept_rest.get('name')}'. Deleted {deleted_restaurants} other restaurant(s) and {deleted_orders} order(s).",
+        "kept": {
+            "restaurant_id": keep_id,
+            "name": kept_rest.get("name"),
+        },
+        "deleted": {
+            "restaurants": deleted_restaurants,
+            "orders": deleted_orders,
+        },
+    }), 200
 

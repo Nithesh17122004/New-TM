@@ -138,10 +138,32 @@ def _road_distance_km(rest_lat, rest_lng, cust_lat, cust_lng) -> float:
     return round(straight * HAVERSINE_FALLBACK_PADDING, 2)
 
 
-def _delivery_fee_for_distance(distance_km: float, per_km_fee: float, min_fee: float) -> float:
-    """Delivery fee = distance × per-km rate, floored at a minimum so short
-    trips still pay the rider something. Rounded to the nearest rupee."""
-    return max(min_fee, round(distance_km * per_km_fee))
+def _delivery_fee_for_distance(distance_km: float, per_km_fee: float, min_fee: float = 0.0) -> float:
+    """Delivery fee = ROAD km × per-km rate, rounded to paise (fractional km
+    billed accurately: 1.1 km × ₹15 = ₹16.5). No integer rounding."""
+    return max(min_fee, round(distance_km * per_km_fee, 2))
+
+
+def _round2(v: float) -> float:
+    return round(float(v), 2)
+
+
+def _billing_charges(item_total: float, delivery_fee: float, settings: dict) -> dict:
+    """Service charge + GST breakdown for the new customer billing model:
+    service = SERVICE_PCT% of (food + delivery); GST = GST_FOOD_PCT% food
+    + GST_DELIVERY_PCT% delivery. Total = food + delivery + service + GST."""
+    service_charge = _round2((item_total + delivery_fee) * float(settings.get("service_charge_pct", 15.0)) / 100.0)
+    gst_food = _round2(item_total * float(settings.get("gst_food_pct", 5.0)) / 100.0)
+    gst_delivery = _round2(delivery_fee * float(settings.get("gst_delivery_pct", 18.0)) / 100.0)
+    gst_total = _round2(gst_food + gst_delivery)
+    total = _round2(item_total + delivery_fee + service_charge + gst_total)
+    return {
+        "service_charge": service_charge,
+        "gst_food": gst_food,
+        "gst_delivery": gst_delivery,
+        "gst_total": gst_total,
+        "total": total,
+    }
 
 
 # ── Rider Assignment with Rotation ───────────────────────────────────────────
@@ -405,10 +427,6 @@ def place_order():
         per_km_fee=settings["delivery_per_km_fee"],
         min_fee=settings["min_delivery_fee"],
     )
-    # Flat service charge — this is the platform's profit; GST is accounted
-    # for out of this amount, not added on top of the customer's total.
-    service_charge = settings["platform_fee"]
-    platform_fee = service_charge  # kept for backward compatibility with older API consumers
 
     items = []
     item_total = 0.0
@@ -423,7 +441,15 @@ def place_order():
             "qty": qty,
         })
 
-    total = item_total + delivery_fee + platform_fee
+    # New billing model: food (100% to restaurant) + delivery fee (₹15/km road,
+    # fractional) + service charge (15% of food+delivery) + GST (5% food / 18% delivery).
+    bill = _billing_charges(item_total, delivery_fee, settings)
+    service_charge = bill["service_charge"]
+    gst_food = bill["gst_food"]
+    gst_delivery = bill["gst_delivery"]
+    gst_total = bill["gst_total"]
+    total = bill["total"]
+    platform_fee = service_charge  # kept for backward compatibility with older API consumers
 
     order_id = _generate_order_id()
     for _ in range(5):
@@ -447,6 +473,12 @@ def place_order():
         "delivery_per_km_fee": settings["delivery_per_km_fee"],
         "platform_fee": platform_fee,
         "service_charge": service_charge,
+        "service_charge_pct": settings["service_charge_pct"],
+        "gst_food": gst_food,
+        "gst_delivery": gst_delivery,
+        "gst_total": gst_total,
+        "gst_food_pct": settings["gst_food_pct"],
+        "gst_delivery_pct": settings["gst_delivery_pct"],
         "total": total,
         "distance_km": distance_km,
         "payment_method": str(data["payment_method"]),
@@ -490,9 +522,16 @@ def place_order():
             "total": total,
             "item_total": item_total,
             "delivery_fee": delivery_fee,
-            "delivery_fee_breakdown": f"{distance_km} km × ₹{settings['delivery_per_km_fee']:.0f}/km",
+            "delivery_per_km_fee": settings["delivery_per_km_fee"],
+            "delivery_fee_breakdown": f"{distance_km} km × ₹{settings['delivery_per_km_fee']:.2f}/km",
             "platform_fee": platform_fee,
             "service_charge": service_charge,
+            "service_charge_pct": settings["service_charge_pct"],
+            "gst_food": gst_food,
+            "gst_delivery": gst_delivery,
+            "gst_total": gst_total,
+            "gst_food_pct": settings["gst_food_pct"],
+            "gst_delivery_pct": settings["gst_delivery_pct"],
             "distance_km": distance_km,
             "status": "pending",
             "restaurant_name": restaurant.get("name", ""),

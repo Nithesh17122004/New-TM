@@ -450,18 +450,22 @@
   <!-- ── SETTINGS ── -->
   <div class="tab-panel" id="tab-settings">
     <div class="settings-card">
-      <h3><i class="fas fa-sliders" style="color:var(--accent)"></i> Platform Settings</h3>
+      <h3><i class="fas fa-sliders" style="color:var(--accent)"></i> Platform Settings (Billing)</h3>
       <div class="form-group">
-        <label class="form-label">Service Charge (₹ flat, per order — platform profit)</label>
-        <input type="number" class="form-control" id="settingPlatformFee" value="20">
+        <label class="form-label">Delivery Fee (₹ per road-km — paid to rider, fractional km billed exactly)</label>
+        <input type="number" class="form-control" id="settingDeliveryPerKm" value="15">
       </div>
       <div class="form-group">
-        <label class="form-label">Delivery Fee (₹ per road-km — paid to rider)</label>
-        <input type="number" class="form-control" id="settingDeliveryPerKm" value="12">
+        <label class="form-label">Service Charge (% of food + delivery fee — platform fee)</label>
+        <input type="number" class="form-control" id="settingServiceChargePct" value="15">
       </div>
       <div class="form-group">
-        <label class="form-label">Minimum Delivery Fee (₹, floor for short trips)</label>
-        <input type="number" class="form-control" id="settingMinDeliveryFee" value="15">
+        <label class="form-label">GST on Food (%)</label>
+        <input type="number" class="form-control" id="settingGstFoodPct" value="5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">GST on Delivery Fee (%)</label>
+        <input type="number" class="form-control" id="settingGstDeliveryPct" value="18">
       </div>
       <div class="form-group">
         <label class="form-label">Support Phone Number</label>
@@ -471,15 +475,14 @@
         <i class="fas fa-save"></i> Save Settings
       </button>
       <div style="margin-top:16px;padding:12px;background:var(--surface-alt);border-radius:var(--radius);font-size:13px">
-        <strong style="color:var(--accent)">Delivery Fee Slabs</strong>
-        <table style="width:100%;margin-top:8px;border-collapse:collapse">
-          <tr><td style="padding:3px 6px">0 – 2 km</td><td style="padding:3px 6px;text-align:right;font-weight:600">₹30</td></tr>
-          <tr><td style="padding:3px 6px">2 – 4 km</td><td style="padding:3px 6px;text-align:right;font-weight:600">₹40</td></tr>
-          <tr><td style="padding:3px 6px">4 – 6 km</td><td style="padding:3px 6px;text-align:right;font-weight:600">₹50</td></tr>
-          <tr><td style="padding:3px 6px">6 – 8 km</td><td style="padding:3px 6px;text-align:right;font-weight:600">₹60</td></tr>
-          <tr><td style="padding:3px 6px">8+ km</td><td style="padding:3px 6px;text-align:right;font-weight:600">₹70</td></tr>
-        </table>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Rider gets 100% of delivery fee · Platform keeps ₹20 flat</div>
+        <strong style="color:var(--accent)">Customer Bill</strong>
+        <div style="margin-top:8px;line-height:1.9">
+          Food (restaurant price) + Delivery (₹15/km road route, e.g. 1.1 km → ₹16.5)<br>
+          + Service Charge (15% of food + delivery)<br>
+          + GST (5% of food + 18% of delivery fee)<br>
+          = <strong>Total the customer pays</strong><br>
+          <span style="color:var(--text-dim)">Rider gets 100% of delivery fee · Restaurant gets 100% of food · Rates editable here anytime</span>
+        </div>
       </div>
     </div>
 
@@ -488,7 +491,10 @@
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
         These actions are irreversible. Please proceed with extreme caution.
       </p>
-      <button class="btn btn-danger" onclick="confirmResetDB()">
+      <button class="btn btn-danger" onclick="confirmKeepOnlyMadurai()">
+        <i class="fas fa-store"></i> Keep Only Madurai Meals (delete all other restaurants)
+      </button>
+      <button class="btn btn-danger" style="margin-top:10px" onclick="confirmResetDB()">
         <i class="fas fa-database"></i> Reset Database
       </button>
     </div>
@@ -1433,13 +1439,15 @@ async function loadSettings() {
   try {
     const data = await apiFetch('/admin/settings');
     const d = data.data || {};
-    const pf = document.getElementById('settingPlatformFee');
     const pk = document.getElementById('settingDeliveryPerKm');
-    const mf = document.getElementById('settingMinDeliveryFee');
+    const sc = document.getElementById('settingServiceChargePct');
+    const gf = document.getElementById('settingGstFoodPct');
+    const gd = document.getElementById('settingGstDeliveryPct');
     const ph = document.getElementById('settingPhone');
-    if (pf) pf.value = d.platform_fee ?? 20;
-    if (pk) pk.value = d.delivery_per_km_fee ?? 12;
-    if (mf) mf.value = d.min_delivery_fee ?? 15;
+    if (pk) pk.value = d.delivery_per_km_fee ?? 15;
+    if (sc) sc.value = d.service_charge_pct ?? 15;
+    if (gf) gf.value = d.gst_food_pct ?? 5;
+    if (gd) gd.value = d.gst_delivery_pct ?? 18;
     if (ph) ph.value = d.support_phone ?? '';
   } catch (e) {
     // silent — might be first load with no settings yet
@@ -1447,16 +1455,17 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const platformFee   = parseFloat(document.getElementById('settingPlatformFee').value);
   const deliveryPerKm = parseFloat(document.getElementById('settingDeliveryPerKm').value);
-  const minDeliveryFee = parseFloat(document.getElementById('settingMinDeliveryFee').value);
+  const serviceChargePct = parseFloat(document.getElementById('settingServiceChargePct').value);
+  const gstFoodPct = parseFloat(document.getElementById('settingGstFoodPct').value);
+  const gstDeliveryPct = parseFloat(document.getElementById('settingGstDeliveryPct').value);
   const supportPhone  = (document.getElementById('settingPhone').value || '').trim();
 
-  if (isNaN(platformFee) || isNaN(deliveryPerKm) || isNaN(minDeliveryFee)) {
-    showToast('Please enter valid numbers for all fee fields', 'error'); return;
+  if (isNaN(deliveryPerKm) || isNaN(serviceChargePct) || isNaN(gstFoodPct) || isNaN(gstDeliveryPct)) {
+    showToast('Please enter valid numbers for all billing fields', 'error'); return;
   }
-  if (platformFee < 0 || deliveryPerKm < 0 || minDeliveryFee < 0) {
-    showToast('Fees cannot be negative', 'error'); return;
+  if (deliveryPerKm < 0 || serviceChargePct < 0 || gstFoodPct < 0 || gstDeliveryPct < 0) {
+    showToast('Values cannot be negative', 'error'); return;
   }
 
   const btn = document.getElementById('saveSettingsBtn');
@@ -1465,26 +1474,44 @@ async function saveSettings() {
     const result = await apiFetch('/admin/settings', {
       method: 'POST',
       body: JSON.stringify({
-        platform_fee: platformFee,
         delivery_per_km_fee: deliveryPerKm,
-        min_delivery_fee: minDeliveryFee,
+        service_charge_pct: serviceChargePct,
+        gst_food_pct: gstFoodPct,
+        gst_delivery_pct: gstDeliveryPct,
         support_phone: supportPhone
       })
     });
     const d = result.data || {};
-    const pf = document.getElementById('settingPlatformFee');
     const pk = document.getElementById('settingDeliveryPerKm');
-    const mf = document.getElementById('settingMinDeliveryFee');
+    const sc = document.getElementById('settingServiceChargePct');
+    const gf = document.getElementById('settingGstFoodPct');
+    const gd = document.getElementById('settingGstDeliveryPct');
     const ph = document.getElementById('settingPhone');
-    if (pf) pf.value = d.platform_fee ?? platformFee;
     if (pk) pk.value = d.delivery_per_km_fee ?? deliveryPerKm;
-    if (mf) mf.value = d.min_delivery_fee ?? minDeliveryFee;
+    if (sc) sc.value = d.service_charge_pct ?? serviceChargePct;
+    if (gf) gf.value = d.gst_food_pct ?? gstFoodPct;
+    if (gd) gd.value = d.gst_delivery_pct ?? gstDeliveryPct;
     if (ph) ph.value = d.support_phone ?? supportPhone;
-    showToast('Settings saved successfully!', 'success');
+    showToast('Billing settings saved — new rates apply to all new orders!', 'success');
   } catch (e) {
     showToast('Settings: ' + e.message, 'error');
   } finally {
     setLoading(btn, false, '<i class="fas fa-save"></i> Save Settings');
+  }
+}
+
+async function confirmKeepOnlyMadurai() {
+  if (!confirm('This will DELETE all restaurants EXCEPT "Madurai Meals" (menus + their orders included). Continue?')) return;
+  if (!confirm('FINAL WARNING: This is IRREVERSIBLE. Only "Madurai Meals" will remain. Click OK to confirm.')) return;
+  try {
+    const result = await apiFetch('/admin/keep-only-restaurant', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Madurai Meals' })
+    });
+    showToast(result.message || 'Done! Only Madurai Meals kept.', 'success');
+    setTimeout(() => loadDashboard(), 1000);
+  } catch (e) {
+    showToast(e.message, 'error');
   }
 }
 

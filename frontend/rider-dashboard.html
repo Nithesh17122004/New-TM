@@ -583,6 +583,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!authData.phone) {
     showToast('Add your mobile number in Profile for masked calls', 'warning');
   }
+  // Logged in ⇒ online (accept & receive order offers). Logged out ⇒ offline.
+  ensureOnlineState();
   renderEarnings();
   renderHistory();
   renderEarnDeliveries();
@@ -683,6 +685,23 @@ function switchTab(tab) {
 // ============================================================
 // ONLINE TOGGLE
 // ============================================================
+function ensureOnlineState() {
+  // Rider logged in ⇒ must be ONLINE to receive order offers.
+  // (Logout sets is_online=false — symmetric with restaurant login/logout.)
+  isOnline = true;
+  const tog = document.getElementById('onlineToggle');
+  if (tog) tog.checked = true;
+  const txt  = document.getElementById('onlineText');
+  const desc = document.getElementById('onlineDesc');
+  if (txt)  { txt.textContent  = '🟢 ONLINE — READY TO DELIVER'; txt.style.color = 'var(--accent)'; }
+  if (desc) { desc.textContent = 'You are now receiving delivery requests'; }
+  fetch(`${API_BASE}/riders/status`, {
+    method: 'PATCH',
+    headers: HEADERS,
+    body: JSON.stringify({ is_online: true, is_available: true })
+  }).catch(function(){});
+}
+
 async function toggleOnline() {
   isOnline = document.getElementById('onlineToggle').checked;
   const txt  = document.getElementById('onlineText');

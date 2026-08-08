@@ -476,13 +476,16 @@
 
     <!-- Bill -->
     <div class="price-breakdown" style="background:var(--surface-card);border-radius:var(--radius);padding:16px;margin-bottom:20px">
-      <div class="price-row"><span>Item Total</span><span id="billItems">₹0</span></div>
-      <div class="price-row"><span>Delivery Fee</span><span id="billDelivery">₹0</span></div>
+      <div class="price-row"><span>Item Total</span><span id="billItems">₹0.00</span></div>
+      <div class="price-row"><span>Delivery Fee</span><span id="billDelivery">₹0.00</span></div>
       <div id="billDeliveryDetail" style="display:none;font-size:11px;color:var(--text-dim);padding:4px 0 8px 12px;line-height:1.6;border-bottom:1px solid var(--border)"></div>
-      <div class="price-row" id="billSlabInfo" style="display:none;font-size:12px;color:var(--text-dim);padding:0 0 4px 0"><span>Slab</span><span id="billSlabText"></span></div>
-      <div class="price-row"><span>Platform Fee</span><span id="billPlatform">₹20</span></div>
+      <div class="price-row" id="billSlabInfo" style="display:none;font-size:12px;color:var(--text-dim);padding:0 0 4px 0"><span>Rate (road km)</span><span id="billSlabText"></span></div>
+      <div class="price-row" id="billGstFoodRow" style="display:none"><span>GST on Food (5%)</span><span id="billGstFood">₹0.00</span></div>
+      <div class="price-row" id="billGstDlvRow" style="display:none"><span>GST on Delivery (18%)</span><span id="billGstDlv">₹0.00</span></div>
+      <div class="price-row"><span>Service Charge (<span id="billServicePct">15</span>%)</span><span id="billService">₹0.00</span></div>
+      <div class="price-row" id="billGstRow" style="display:none"><span style="color:var(--text-muted)">GST Total</span><span id="billGstTotal" style="color:var(--text-muted)">₹0.00</span></div>
       <div class="price-row" id="discountRow" style="display:none"><span style="color:var(--accent)">Coupon Discount</span><span id="billDiscount" style="color:var(--accent)">-₹0</span></div>
-      <div class="price-row total"><span>Total Amount</span><span id="billTotal">₹0</span></div>
+      <div class="price-row total"><span>Total Amount</span><span id="billTotal">₹0.00</span></div>
     </div>
 
     <!-- Payment -->
@@ -650,12 +653,15 @@
   </div>
   <div class="cart-footer" id="cartFooter" style="display:none">
     <div class="price-breakdown">
-      <div class="price-row"><span>Item Total</span><span id="cartSubtotal">₹0</span></div>
-      <div class="price-row"><span>Delivery Fee</span><span id="cartDelivery">₹30</span></div>
+      <div class="price-row"><span>Item Total</span><span id="cartSubtotal">₹0.00</span></div>
+      <div class="price-row"><span>Delivery Fee</span><span id="cartDelivery">₹0.00</span></div>
       <div id="cartDeliveryDetail" style="display:none;font-size:11px;color:var(--text-dim);padding:4px 0 8px 12px;line-height:1.6;border-bottom:1px solid var(--border)"></div>
-      <div class="price-row" id="cartSlabInfo" style="display:none;font-size:12px;color:var(--text-dim);padding:0 0 4px 0"><span>Slab</span><span id="cartSlabText"></span></div>
-      <div class="price-row"><span>Platform Fee</span><span id="cartPlatform">₹20</span></div>
-      <div class="price-row total"><span>Total</span><span id="cartTotal">₹0</span></div>
+      <div class="price-row" id="cartSlabInfo" style="display:none;font-size:12px;color:var(--text-dim);padding:0 0 4px 0"><span>Rate (road km)</span><span id="cartSlabText"></span></div>
+      <div class="price-row" id="cartGstFoodRow" style="display:none"><span>GST on Food (5%)</span><span id="cartGstFood">₹0.00</span></div>
+      <div class="price-row" id="cartGstDlvRow" style="display:none"><span>GST on Delivery (18%)</span><span id="cartGstDlv">₹0.00</span></div>
+      <div class="price-row"><span>Service Charge (<span id="cartServicePct">15</span>%)</span><span id="cartService">₹0.00</span></div>
+      <div class="price-row" id="cartGstRow" style="display:none"><span style="color:var(--text-muted)">GST Total</span><span id="cartGstTotal" style="color:var(--text-muted)">₹0.00</span></div>
+      <div class="price-row total"><span>Total</span><span id="cartTotal">₹0.00</span></div>
     </div>
     <button class="checkout-btn" onclick="openCheckout()" id="proceedCheckoutBtn">
       Proceed to Checkout — <span id="cartTotalBtn">₹0</span>
@@ -759,10 +765,12 @@
 
 // ===== CONSTANTS =====
 const API_BASE = 'https://new-tm-knk1.onrender.com/api/v1';
-let DELIVERY_BASE_FEE = 30;      // legacy fallback only, used if distance can't be resolved at all
-let DELIVERY_PER_KM_FEE = 12;    // ₹ per road-km — paid to the rider
-let MIN_DELIVERY_FEE = 15;       // floor for very short trips
-let PLATFORM_FEE = 20;           // flat service charge — platform's profit, covers its own GST
+let DELIVERY_BASE_FEE = 16.5;     // legacy fallback only, used if distance can't be resolved at all
+let DELIVERY_PER_KM_FEE = 15;    // ₹ per road-km (shortest driving route, fractional km billed exactly) — paid to the rider
+let MIN_DELIVERY_FEE = 0;        // no floor — 1.1 km × ₹15 = ₹16.5 billed accurately
+let SERVICE_CHARGE_PCT = 15;     // % of (food + delivery fee) — platform service charge
+let GST_FOOD_PCT = 5;            // GST on food
+let GST_DELIVERY_PCT = 18;       // GST on delivery fee
 let SUPPORT_PHONE = '044-2200-1234';
 let g_calcDistance = 0;
 let g_calcDeliveryFee = 30;
@@ -790,16 +798,24 @@ async function getRoadDistance(rLat, rLng, cLat, cLng) {
   return calcDeliveryDistance(rLat, rLng, cLat, cLng);
 }
 
-// Delivery fee = distance (road-km, NOT straight-line) × per-km rate, floored
-// at a minimum so short trips still pay the rider something. Must match the
-// backend's _delivery_fee_for_distance() in orders.py exactly — this client-side
-// value is only ever a preview; the backend recalculates and bills authoritatively.
+function round2(n) { return Math.round(n * 100) / 100; }
+
+// Helper: food + delivery-fee based charges (must match backend _billing_charges())
+function calcCharges(subtotal, delivery) {
+  const service = round2((subtotal + delivery) * SERVICE_CHARGE_PCT / 100);
+  const gstFood = round2(subtotal * GST_FOOD_PCT / 100);
+  const gstDlv  = round2(delivery * GST_DELIVERY_PCT / 100);
+  return { service, gstFood, gstDlv, gst: round2(gstFood + gstDlv) };
+}
+
+// Delivery fee = road-km × per-km rate (fractional km billed exactly, e.g.
+// 1.1 km × ₹15 = ₹16.5). Must match backend's _delivery_fee_for_distance().
 function deliveryFeeSlab(dist) {
-  return Math.max(MIN_DELIVERY_FEE, Math.round(dist * DELIVERY_PER_KM_FEE));
+  return Math.max(MIN_DELIVERY_FEE, round2(dist * DELIVERY_PER_KM_FEE));
 }
 
 function slabRange(dist) {
-  return dist.toFixed(1) + ' km × ₹' + DELIVERY_PER_KM_FEE + '/km';
+  return dist.toFixed(2) + ' km × ₹' + DELIVERY_PER_KM_FEE + '/km';
 }
 
 // ===== STATE =====
@@ -825,10 +841,12 @@ async function loadPlatformSettings() {
     const data = await res.json();
     if (!res.ok || !data.success) return;
     const d = data.data || {};
-    DELIVERY_BASE_FEE = Number(d.delivery_base_fee ?? 30);
-    DELIVERY_PER_KM_FEE = Number(d.delivery_per_km_fee ?? 12);
-    MIN_DELIVERY_FEE = Number(d.min_delivery_fee ?? 15);
-    PLATFORM_FEE = Number(d.platform_fee ?? 20);
+    DELIVERY_BASE_FEE = Number(d.delivery_base_fee ?? 16.5);
+    DELIVERY_PER_KM_FEE = Number(d.delivery_per_km_fee ?? 15);
+    MIN_DELIVERY_FEE = Number(d.min_delivery_fee ?? 0);
+    SERVICE_CHARGE_PCT = Number(d.service_charge_pct ?? 15);
+    GST_FOOD_PCT = Number(d.gst_food_pct ?? 5);
+    GST_DELIVERY_PCT = Number(d.gst_delivery_pct ?? 18);
     if (d.support_phone) {
       SUPPORT_PHONE = d.support_phone;
     }
@@ -1288,7 +1306,8 @@ async function updateCartUI() {
   g_calcDistance = dist;
   g_calcDeliveryFee = delivery;
 
-  const total = subtotal + delivery + PLATFORM_FEE;
+  const charges = calcCharges(subtotal, delivery);
+  const total = round2(subtotal + delivery + charges.service + charges.gst);
 
   const cartCount = document.getElementById('cartCount');
   const floatingCart = document.getElementById('floatingCart');
@@ -1298,15 +1317,26 @@ async function updateCartUI() {
   if (mobileBadge) { mobileBadge.textContent = count; mobileBadge.style.display = count > 0 ? 'flex' : 'none'; }
 
   const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  setSafe('cartSubtotal', '₹' + subtotal);
-  setSafe('cartDelivery', '₹' + delivery + (dist ? ' (' + dist.toFixed(1) + ' km)' : ''));
-  setSafe('cartPlatform', '₹' + PLATFORM_FEE);
-  setSafe('cartTotal', '₹' + total);
-  setSafe('cartTotalBtn', '₹' + total);
+  setSafe('cartSubtotal', '₹' + round2(subtotal).toFixed(2));
+  setSafe('cartDelivery', '₹' + delivery.toFixed(2) + (dist > 0 ? ' (' + dist.toFixed(1) + ' km)' : ''));
+  setSafe('cartGstFood', '₹' + charges.gstFood.toFixed(2));
+  setSafe('cartGstDlv', '₹' + charges.gstDlv.toFixed(2));
+  setSafe('cartService', '₹' + charges.service.toFixed(2) + ' <span style="font-size:11px;color:var(--text-dim)">(' + SERVICE_CHARGE_PCT + '%)</span>');
+  setSafe('cartGstTotal', '₹' + charges.gst.toFixed(2));
+  setSafe('cartTotal', '₹' + total.toFixed(2));
+  setSafe('cartTotalBtn', '₹' + total.toFixed(2));
   var s = document.getElementById('cartSlabInfo');
   if (s) s.style.display = dist ? 'block' : 'none';
   var st = document.getElementById('cartSlabText');
   if (st) st.textContent = dist ? slabRange(dist) : '';
+  const pctEl = document.getElementById('cartServicePct');
+  if (pctEl) pctEl.textContent = SERVICE_CHARGE_PCT;
+  const gstFoodRow = document.getElementById('cartGstFoodRow');
+  const gstDlvRow = document.getElementById('cartGstDlvRow');
+  const gstRow = document.getElementById('cartGstRow');
+  if (gstFoodRow) gstFoodRow.style.display = (subtotal > 0 && dist > 0) ? 'flex' : 'none';
+  if (gstDlvRow) gstDlvRow.style.display = (subtotal > 0 && dist > 0) ? 'flex' : 'none';
+  if (gstRow) gstRow.style.display = (charges.gst > 0) ? 'flex' : 'none';
   var dd = document.getElementById('cartDeliveryDetail');
   if (dd) {
     if (dist && rest.name) {
@@ -1590,18 +1620,30 @@ async function updateBill() {
   g_calcDeliveryFee = delivery;
 
   const discount = state.coupon ? state.coupon.discount : 0;
-  const total = subtotal + delivery + PLATFORM_FEE - discount;
+  const charges = calcCharges(subtotal, delivery);
+  const total = round2(subtotal + delivery + charges.service + charges.gst - discount);
 
   const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  setSafe('billItems', '₹' + subtotal);
-  setSafe('billDelivery', '₹' + delivery + (dist ? ' (' + dist.toFixed(1) + ' km)' : ''));
-  setSafe('billPlatform', '₹' + PLATFORM_FEE);
-  setSafe('billTotal', '₹' + total);
-  setSafe('checkoutTotal', '₹' + total);
+  setSafe('billItems', '₹' + round2(subtotal).toFixed(2));
+  setSafe('billDelivery', '₹' + delivery.toFixed(2) + (dist > 0 ? ' (' + dist.toFixed(1) + ' km)' : ''));
+  setSafe('billGstFood', '₹' + charges.gstFood.toFixed(2));
+  setSafe('billGstDlv', '₹' + charges.gstDlv.toFixed(2));
+  setSafe('billService', '₹' + charges.service.toFixed(2) + ' <span style="font-size:11px;color:var(--text-dim)">(' + SERVICE_CHARGE_PCT + '%)</span>');
+  setSafe('billGstTotal', '₹' + charges.gst.toFixed(2));
+  setSafe('billTotal', '₹' + total.toFixed(2));
+  setSafe('checkoutTotal', '₹' + total.toFixed(2));
   var s = document.getElementById('billSlabInfo');
   if (s) s.style.display = dist ? 'block' : 'none';
   var st = document.getElementById('billSlabText');
   if (st) st.textContent = dist ? slabRange(dist) : '';
+  const pctEl = document.getElementById('billServicePct');
+  if (pctEl) pctEl.textContent = SERVICE_CHARGE_PCT;
+  const gstFoodRow = document.getElementById('billGstFoodRow');
+  const gstDlvRow = document.getElementById('billGstDlvRow');
+  const gstRow = document.getElementById('billGstRow');
+  if (gstFoodRow) gstFoodRow.style.display = (subtotal > 0 && dist > 0) ? 'flex' : 'none';
+  if (gstDlvRow) gstDlvRow.style.display = (subtotal > 0 && dist > 0) ? 'flex' : 'none';
+  if (gstRow) gstRow.style.display = (charges.gst > 0) ? 'flex' : 'none';
   var dd = document.getElementById('billDeliveryDetail');
   if (dd) {
     if (dist && rest.name) {
@@ -1698,7 +1740,8 @@ async function placeOrder() {
   const discount = state.coupon ? state.coupon.discount : 0;
   const delivery_fee = g_calcDeliveryFee || DELIVERY_BASE_FEE;
   const distance_km = g_calcDistance;
-  const total = subtotal + delivery_fee + PLATFORM_FEE - discount;
+  const chg = calcCharges(subtotal, delivery_fee);
+  const total = round2(subtotal + delivery_fee + chg.service + chg.gst - discount);
 
   const payload = {
     restaurant_id: restaurantId,
