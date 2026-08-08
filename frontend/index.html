@@ -1327,7 +1327,7 @@ async function updateCartUI() {
   setSafe('cartDelivery', '₹' + delivery.toFixed(2) + (dist > 0 ? ' (' + dist.toFixed(1) + ' km)' : ''));
   setSafe('cartGstFood', '₹' + charges.gstFood.toFixed(2));
   setSafe('cartGstDlv', '₹' + charges.gstDlv.toFixed(2));
-  setSafe('cartService', '₹' + charges.service.toFixed(2) + ' <span style="font-size:11px;color:var(--text-dim)">(' + SERVICE_CHARGE_PCT + '%)</span>');
+  setSafe('cartService', '₹' + charges.service.toFixed(2));
   setSafe('cartGstTotal', '₹' + charges.gst.toFixed(2));
   setSafe('cartTotal', '₹' + total.toFixed(2));
   setSafe('cartTotalBtn', '₹' + total.toFixed(2));
@@ -1634,7 +1634,7 @@ async function updateBill() {
   setSafe('billDelivery', '₹' + delivery.toFixed(2) + (dist > 0 ? ' (' + dist.toFixed(1) + ' km)' : ''));
   setSafe('billGstFood', '₹' + charges.gstFood.toFixed(2));
   setSafe('billGstDlv', '₹' + charges.gstDlv.toFixed(2));
-  setSafe('billService', '₹' + charges.service.toFixed(2) + ' <span style="font-size:11px;color:var(--text-dim)">(' + SERVICE_CHARGE_PCT + '%)</span>');
+  setSafe('billService', '₹' + charges.service.toFixed(2));
   setSafe('billGstTotal', '₹' + charges.gst.toFixed(2));
   setSafe('billTotal', '₹' + total.toFixed(2));
   setSafe('checkoutTotal', '₹' + total.toFixed(2));
