@@ -171,6 +171,60 @@ def get_rider_orders():
     return jsonify({"success": True, "data": docs}), 200
 
 
+@riders_bp.route("/pending-offer", methods=["GET"])
+@require_auth
+def get_pending_offer():
+    """
+    Returns the current delivery offer (if any) pending for this rider, so the
+    accept/reject card can be shown after the app is opened from a push
+    notification, even if the socket delivery_offer event was missed.
+    """
+    rider_id = _rider_id(request.rider_user)
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    order = db.orders.find_one(
+        {
+            "status": "accepted",
+            "rider_id": None,
+            "offered_rider_id": rider_id,
+            "last_offer_time": {"$gt": int(time.time()) - 120},  # within offer window
+        }
+    )
+    if order is None:
+        return jsonify({"success": True, "data": None}), 200
+
+    restaurant = db.restaurants.find_one({"_id": order.get("restaurant_id", "")}) or {}
+    try:
+        rest_lat = float(restaurant.get("lat", 0))
+        rest_lng = float(restaurant.get("lng", 0))
+    except (TypeError, ValueError):
+        rest_lat = rest_lng = 0
+    rider = db.delivery_partners.find_one({"_id": rider_id}) or {}
+    loc = rider.get("current_location", {})
+    try:
+        distance = _haversine(rest_lat, rest_lng, float(loc.get("lat", 0)), float(loc.get("lng", 0)))
+    except (TypeError, ValueError):
+        distance = 0
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "order_id": str(order["_id"]),
+            "restaurant_name": order.get("restaurant_name", ""),
+            "restaurant_lat": rest_lat,
+            "restaurant_lng": rest_lng,
+            "delivery_address": order.get("delivery_address", {}),
+            "items": order.get("items", []),
+            "total": order.get("total", 0),
+            "distance_km": round(distance, 2),
+            "far_delivery": bool(order.get("far_delivery", False)),
+            "offer_timeout": 120,
+        },
+    }), 200
+
+
 @riders_bp.route("/delivery/accept/<order_id>", methods=["POST"])
 @require_auth
 def accept_delivery(order_id):

@@ -306,6 +306,21 @@ def _offer_to_next_rider(db, order_id):
         except Exception:
             pass
 
+        try:
+            from api.v1.push_calls import send_delivery_offer_push
+            from api.v1.push_notifications import notify_rider_delivery_offer
+            offer_data = {
+                "order_id": order_id,
+                "restaurant_name": order.get("restaurant_name", ""),
+                "total": order.get("total", 0),
+                "distance_km": round(distance, 2),
+                "far_delivery": False,
+            }
+            send_delivery_offer_push(next_rider_id, **offer_data)
+            notify_rider_delivery_offer(next_rider_id, offer_data)
+        except Exception:
+            pass
+
         return {"success": True, "rider_id": next_rider_id, "rider_name": next_rider.get("name", "")}
 
     # No rider within the usual radius — fall back to the nearest available
@@ -330,6 +345,7 @@ def _offer_to_next_rider(db, order_id):
                     "offered_rider_id": next_rider_id,
                     "last_offer_time": now,
                     "no_riders_left": False,
+                    "far_delivery": True,
                 }
             },
         )
@@ -348,6 +364,21 @@ def _offer_to_next_rider(db, order_id):
                 "far_delivery": True,
                 "offer_timeout": 120,
             }, room=f"rider_{next_rider_id}")
+        except Exception:
+            pass
+
+        try:
+            from api.v1.push_calls import send_delivery_offer_push
+            from api.v1.push_notifications import notify_rider_delivery_offer
+            offer_data = {
+                "order_id": order_id,
+                "restaurant_name": order.get("restaurant_name", ""),
+                "total": order.get("total", 0),
+                "distance_km": round(distance, 2),
+                "far_delivery": True,
+            }
+            send_delivery_offer_push(next_rider_id, **offer_data)
+            notify_rider_delivery_offer(next_rider_id, offer_data)
         except Exception:
             pass
 

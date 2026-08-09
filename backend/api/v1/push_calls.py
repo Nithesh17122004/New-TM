@@ -186,3 +186,58 @@ def _send_apns_voip(token, call_id, order_id, caller_name, caller_role):
         client.send_notification(token, payload, topic=topic)
     except Exception as e:
         logger.warning(f'APNs VoIP send failed: {e}')
+
+
+def send_delivery_offer_push(user_id, order_id, restaurant_name, total, distance_km, far_delivery=False):
+    """
+    Wake the rider's native app (FCM/APNs) with a delivery-offer notification
+    so they can accept or reject, even when the app is in background/killed.
+    Browser PWA riders get the equivalent WebPush from
+    push_notifications.notify_rider_delivery_offer().
+    """
+    db = _get_db()
+    if db is None:
+        return
+    devices = list(db.device_tokens.find({'user_id': user_id}))
+    if not devices:
+        return
+    for d in devices:
+        if d['platform'] == 'android':
+            app = _firebase()
+            if not app:
+                continue
+            try:
+                from firebase_admin import messaging
+                message = messaging.Message(
+                    token=d['token'],
+                    data={
+                        'type': 'delivery_offer',
+                        'orderId': str(order_id),
+                        'restaurantName': restaurant_name or '',
+                        'total': str(total or ''),
+                        'distanceKm': str(round(distance_km, 2) if distance_km else ''),
+                        'farDelivery': '1' if far_delivery else '0',
+                    },
+                    android=messaging.AndroidConfig(priority='high'),
+                )
+                messaging.send(message, app=app)
+            except Exception as e:
+                logger.warning(f'FCM delivery-offer send failed: {e}')
+        elif d['platform'] == 'ios':
+            client = _apns()
+            if not client:
+                continue
+            try:
+                from apns2.payload import Payload
+                payload = Payload(custom={
+                    'type': 'delivery_offer',
+                    'orderId': str(order_id),
+                    'restaurantName': restaurant_name or '',
+                    'total': str(total or ''),
+                    'distanceKm': str(round(distance_km, 2) if distance_km else ''),
+                    'farDelivery': '1' if far_delivery else '0',
+                })
+                topic = os.environ.get('APNS_TOPIC', 'in.thookumadurai.app.voip')
+                client.send_notification(d['token'], payload, topic=topic)
+            except Exception as e:
+                logger.warning(f'APNs delivery-offer send failed: {e}')

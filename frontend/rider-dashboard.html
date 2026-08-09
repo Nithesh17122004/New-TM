@@ -592,6 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRiderEarnings();
   startGPS();
   setInterval(loadRiderOrders, 20000);
+  checkPendingOffer();
 
   // Register Service Worker + subscribe to push
   if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -599,6 +600,9 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.serviceWorker.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'THOOKU_INCOMING_CALL') {
           _tryHandleIncomingCall(event.data);
+        }
+        if (event.data && event.data.type === 'THOOKU_DELIVERY_OFFER') {
+          showDeliveryOffer(event.data);
         }
       });
       reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array('BNnzcMGGloSz2cEO5alGmpncGahhiXSfzTQEAUh5gd7NHQgkpTv6edQeaoUPNGCXQRoDS5BjwloIa8utWD2ueEs') }).then(function(sub) {
@@ -620,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (RIDER_ID) {
         socket.emit('join_rider', { rider_id: RIDER_ID });
         if (currentOrderId) socket.emit('join_order', { order_id: currentOrderId });
+        checkPendingOffer();
       }
     });
     socket.on('new_order', (data) => {
@@ -627,23 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Sequential delivery offer — targeted to this specific rider
     socket.on('delivery_offer', (data) => {
-      if (data.order_id) {
-        currentOrderId = data.order_id;
-        activeOrder = data;
-        const pickupEl = document.getElementById('incomingPickup');
-        const dropEl = document.getElementById('incomingDrop');
-        if (pickupEl) pickupEl.textContent = data.restaurant_name || 'Restaurant';
-        if (dropEl) dropEl.textContent = data.delivery_address ? formatAddr(data.delivery_address) : '📍 Customer address';
-        var inc = document.getElementById('incomingCard');
-        if (inc) { inc.style.display = 'block'; }
-        var act = document.getElementById('activeCard');
-        if (act) { act.style.display = 'none'; }
-        showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.' + (data.far_delivery ? ' (Far from you — nearest available rider)' : ''), 'warning');
-        startAcceptCountdown(data.offer_timeout || 120);
-        playRingtone();
-        if (_ringStopTimer) clearTimeout(_ringStopTimer);
-        _ringStopTimer = setTimeout(stopRingtone, 10000);
-      }
+      if (data.order_id) showDeliveryOffer(data);
     });
     socket.on('order_taken', (data) => {
       if (currentOrderId && data.order_id === currentOrderId) {
@@ -728,6 +717,41 @@ async function toggleOnline() {
   try {
     await fetch(`${API_BASE}/riders/status`, { method:'PATCH', headers:HEADERS, body:JSON.stringify({ is_online: isOnline }) });
   } catch {}
+}
+
+// ============================================================
+// DELIVERY OFFER (accept/reject card)
+// ============================================================
+function showDeliveryOffer(data) {
+  if (!data || !data.order_id) return;
+  currentOrderId = data.order_id;
+  activeOrder = data;
+  const pickupEl = document.getElementById('incomingPickup');
+  const dropEl = document.getElementById('incomingDrop');
+  if (pickupEl) pickupEl.textContent = data.restaurant_name || 'Restaurant';
+  if (dropEl) dropEl.textContent = data.delivery_address ? formatAddr(data.delivery_address) : '📍 Customer address';
+  const inc = document.getElementById('incomingCard');
+  if (inc) { inc.style.display = 'block'; }
+  const act = document.getElementById('activeCard');
+  if (act) { act.style.display = 'none'; }
+  showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.' + (data.far_delivery ? ' (Far from you — nearest available rider)' : ''), 'warning');
+  startAcceptCountdown(data.offer_timeout || 120);
+  playRingtone();
+  if (_ringStopTimer) clearTimeout(_ringStopTimer);
+  _ringStopTimer = setTimeout(stopRingtone, 10000);
+}
+
+// Re-fetch any offer that is still pending for this rider — covers the case
+// where the app was opened from a push notification after the socket event.
+async function checkPendingOffer() {
+  try {
+    const res = await fetch(`${API_BASE}/riders/pending-offer`, { headers: HEADERS });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.success && data.data && data.data.order_id) {
+      showDeliveryOffer(data.data);
+    }
+  } catch (e) {}
 }
 
 // ============================================================

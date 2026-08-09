@@ -224,3 +224,17 @@ def _send_push_to_all(subscriptions, payload):
     if dead and db is not None:
         for sub in dead:
             db.push_subscriptions.update_many({}, {'$pull': {'subscriptions': sub}})
+
+
+def notify_rider_delivery_offer(rider_user_id, payload):
+    """
+    Browser/PWA rider notification for a new delivery offer (accept/reject).
+    The native app path (FCM) is push_calls.send_delivery_offer_push().
+    """
+    db = _get_db()
+    if db is None:
+        return
+    doc = db.push_subscriptions.find_one({'user_id': rider_user_id})
+    if not doc or not doc.get('subscriptions'):
+        return
+    _send_push_to_all(doc['subscriptions'], {'type': 'delivery_offer', **payload})
