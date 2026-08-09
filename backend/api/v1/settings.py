@@ -43,7 +43,12 @@ def get_ice_config():
     turn_url = os.environ.get("TURN_SERVER_URL", "")
     turn_user = os.environ.get("TURN_SERVER_USERNAME", "")
     turn_cred = os.environ.get("TURN_SERVER_CREDENTIAL", "")
-    if turn_url and turn_user and turn_cred:
+    # Skip placeholder/default TURN values — dead servers only slow down
+    # ICE and can prevent a working P2P audio path.
+    placeholder = ("your-server", "your_coturn", "localhost", "example.com")
+    if (turn_url and turn_user and turn_cred
+            and not any(p in turn_url.lower() for p in placeholder)
+            and "your_coturn" not in turn_user and "your_coturn" not in turn_cred):
         ice_servers.append({
             "urls": [turn_url],
             "username": turn_user,

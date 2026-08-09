@@ -955,7 +955,7 @@ def process_auto_refunds():
         "status": {"$in": ["pending", "accepted", "preparing"]},
         "created_at": {"$lt": cutoff},
         "no_rider_refund_processed": {"$ne": True},
-        "payment_status": {"$in": ["paid", "pending"]},
+        "payment_status": {"$in": ["paid", "completed", "pending"]},
     }))
 
     for order in stuck_orders:
@@ -1046,9 +1046,20 @@ def process_auto_refunds():
             from app import socketio
             socketio.emit("order_refunded", {
                 "order_id": order_id,
-                "message": "No rider was available for your order. A full refund has been processed.",
+                "message": "Sorry! No delivery partner was available in 30 minutes, so your order has been cancelled and fully refunded.",
                 "amount": amount,
             }, room=f"order_{order_id}")
+        except Exception:
+            pass
+
+        # Also tell the restaurant the order was auto-cancelled & refunded
+        try:
+            from app import socketio
+            socketio.emit("order_status_update", {
+                "order_id": order_id,
+                "status": "cancelled",
+                "message": "Order auto-cancelled — no rider available within 30 min (refunded to customer)",
+            }, room=f"restaurant_{order.get('restaurant_id', '')}")
         except Exception:
             pass
 
@@ -1074,8 +1085,11 @@ def cancel_order(order_id):
     if order.get("customer_phone") != payload.get("phone"):
         return jsonify({"success": False, "message": "Access denied"}), 403
 
-    if order.get("status") not in ("pending", "accepted"):
-        return jsonify({"success": False, "message": f"Cannot cancel order with status '{order.get('status')}'"}), 400
+    # Customer may cancel ONLY while the order is pending (before the
+    # restaurant accepts it). Once accepted, the cancel button disappears
+    # and this endpoint rejects the cancellation.
+    if order.get("status") != "pending":
+        return jsonify({"success": False, "message": f"Cannot cancel order — it has already been accepted by the restaurant (status: '{order.get('status')}')"}), 400
 
     db.orders.update_one(
         {"_id": order_id},

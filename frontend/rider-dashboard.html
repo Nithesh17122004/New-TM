@@ -1002,11 +1002,23 @@ function playRemoteStream(stream) {
   // A real <audio> element is required to reliably play remote WebRTC audio
   // in WebKit-based WebViews (iOS/Android) - routing purely through
   // AudioContext.createMediaStreamSource() silently produces no sound there.
+  // The element is kept off-screen (not display:none) because some WebViews
+  // also drop audio from hidden elements.
   var el = document.getElementById('remoteCallAudio');
-  if (el) {
-    el.srcObject = stream;
-    el.play().catch(function(e){ console.warn('Remote audio play() blocked:', e); });
+  if (!el) return;
+  el.muted = false;
+  el.volume = 1;
+  el.srcObject = stream;
+  function tryPlay() {
+    var p = el.play();
+    if (p && p.catch) p.catch(function(){});
   }
+  tryPlay();
+  // iOS/WebView autoplay policies may reject until a user gesture — retry
+  // on the next tap/touch on the call overlay.
+  var unlock = function() { el.muted = false; tryPlay(); };
+  document.addEventListener('touchend', unlock, { once: true, passive: true });
+  document.addEventListener('click', unlock, { once: true, passive: true });
 }
 
 function showCallOverlay(name, status) {
@@ -1079,11 +1091,23 @@ function stopAndUploadRecording(orderId) {
         fd.append('order_id', oid);
         fd.append('role', 'rider');
         fd.append('audio', blob, 'call_' + oid + '_' + Date.now() + '.webm');
-        fetch(API_BASE + '/calls/recording', {
-          method: 'POST',
-          headers: { 'Authorization': HEADERS.Authorization },
-          body: fd
-        }).catch(function() {});
+        // Upload with retries — a single flaky network event shouldn't lose
+        // the whole recording. Tries 3 times with 2s gaps.
+        const upload = (attempt) => {
+          fetch(API_BASE + '/calls/recording', {
+            method: 'POST',
+            headers: { 'Authorization': HEADERS.Authorization },
+            body: fd
+          }).then(function(res) {
+            if (res.ok) { console.log('Call recording uploaded'); return; }
+            throw new Error('HTTP ' + res.status);
+          }).catch(function(e) {
+            console.warn('Recording upload failed (attempt ' + attempt + '):', e);
+            if (attempt < 3) setTimeout(function() { upload(attempt + 1); }, 2000);
+            else showToast('Recording upload failed — check network', 'error');
+          });
+        };
+        upload(1);
       } catch (e) { console.warn('Recording upload failed:', e); }
     };
     r.stop();
@@ -1507,7 +1531,7 @@ function showToast(msg, type='success') {
 </div>
 
 <!-- ===== ACTIVE CALL BAR ===== -->
-<audio id="remoteCallAudio" autoplay playsinline style="display:none"></audio>
+<audio id="remoteCallAudio" autoplay playsinline style="position:fixed;left:-99999px;top:0;width:2px;height:2px;opacity:0.01"></audio>
 <div id="callOverlay" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;z-index:99998;background:var(--card);border-radius:16px;padding:14px 16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;max-width:400px;margin:0 auto">
   <div style="display:flex;align-items:center;gap:12px;width:100%">
     <div style="font-size:28px">🔊</div>

@@ -841,11 +841,21 @@ def play_call_recording(recording_id):
             return jsonify({"success": True, "data": {"url": url}}), 200
         except Exception as e:
             return jsonify({"success": False, "message": f"Could not generate playback URL: {e}"}), 500
+    elif doc["storage_backend"] == "mongo":
+        # Stored in MongoDB gridfs — persistent across redeploys.
+        from flask import send_file, BytesIO
+        try:
+            from gridfs import GridFS
+            fs = GridFS(db)
+            gf = fs.get(ObjectId(doc["storage_ref"]))
+            return send_file(BytesIO(gf.read()), mimetype="audio/webm")
+        except Exception as e:
+            return jsonify({"success": False, "message": f"Recording unavailable in database: {e}"}), 404
     else:
         # Local disk — stream the file directly.
         from flask import send_file
         path = doc["storage_ref"]
         if not os.path.isfile(path):
-            return jsonify({"success": False, "message": "Recording file missing on disk (likely wiped by a redeploy — set up R2 to avoid this)"}), 404
+            return jsonify({"success": False, "message": "Recording file missing on disk (likely wiped by a redeploy — recordings now persist in MongoDB, retry after the next upload)"}), 404
         return send_file(path, mimetype="audio/webm")
 

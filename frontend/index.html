@@ -685,6 +685,7 @@
 <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
 <!-- ===== CALL OVERLAY (WebRTC) ===== -->
+<audio id="remoteCallAudio" autoplay playsinline style="position:fixed;left:-99999px;top:0;width:2px;height:2px;opacity:0.01"></audio>
 <div id="callOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
   <div style="background:#0f2016;border-radius:20px;padding:32px;text-align:center;max-width:340px;width:100%;border:1px solid rgba(245,166,35,.14)">
     <div style="font-size:56px;margin-bottom:12px" id="callOverlayIcon">📞</div>
@@ -2159,12 +2160,26 @@ function createPeerConnection(orderId, onRemoteStream) {
 function playRemoteStream(stream) {
   if (!stream) return;
   if (!stream.getAudioTracks().length) { console.warn('No audio tracks in remote stream'); return; }
-  try {
-    if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    var src = _audioCtx.createMediaStreamSource(stream);
-    src.connect(_audioCtx.destination);
-  } catch(e) { console.warn('AudioContext error:', e); }
+  // A real <audio> element is required to reliably play remote WebRTC audio
+  // in WebKit-based WebViews (iOS/Android) - routing purely through
+  // AudioContext.createMediaStreamSource() silently produces no sound there.
+  // The element is kept off-screen (not display:none) because some WebViews
+  // also drop audio from hidden elements.
+  var el = document.getElementById('remoteCallAudio');
+  if (!el) return;
+  el.muted = false;
+  el.volume = 1;
+  el.srcObject = stream;
+  function tryPlay() {
+    var p = el.play();
+    if (p && p.catch) p.catch(function(){});
+  }
+  tryPlay();
+  // iOS/WebView autoplay policies may reject until a user gesture — retry
+  // on the next tap/touch on the call overlay.
+  var unlock = function() { el.muted = false; tryPlay(); };
+  document.addEventListener('touchend', unlock, { once: true, passive: true });
+  document.addEventListener('click', unlock, { once: true, passive: true });
 }
 
 function showCallOverlay(name, status, isIncoming) {

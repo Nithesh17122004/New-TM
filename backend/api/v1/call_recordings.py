@@ -35,7 +35,7 @@ LOCAL_STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname
 
 def _r2_client():
     """Returns a configured boto3 S3-compatible client for Cloudflare R2,
-    or None if R2 isn't configured (falls back to local disk)."""
+    or None if R2 isn't configured (falls back to MongoDB gridfs)."""
     account_id = os.environ.get("R2_ACCOUNT_ID", "")
     access_key = os.environ.get("R2_ACCESS_KEY_ID", "")
     secret_key = os.environ.get("R2_SECRET_ACCESS_KEY", "")
@@ -51,6 +51,18 @@ def _r2_client():
             region_name="auto",
         )
     except ImportError:
+        return None
+
+
+def _save_to_mongo(db, filename, raw):
+    """Store recording bytes as MongoDB grid file (survives redeploys even
+    when R2/local disk are not configured — the DB is persistent)."""
+    try:
+        from gridfs import GridFS
+        fs = GridFS(db)
+        fid = fs.put(raw, filename=filename, content_type="audio/webm", chunk_size=1024 * 256)
+        return str(fid)
+    except Exception:
         return None
 
 
@@ -88,14 +100,21 @@ def upload_call_recording():
             storage_ref = f"{bucket}/{filename}"
         except Exception as e:
             import logging
-            logging.warning(f"R2 upload failed, falling back to local disk: {e}")
+            logging.warning(f"R2 upload failed, falling back to MongoDB: {e}")
 
     if storage_backend == "local":
-        os.makedirs(LOCAL_STORAGE_DIR, exist_ok=True)
-        path = os.path.join(LOCAL_STORAGE_DIR, filename)
-        with open(path, "wb") as f:
-            f.write(raw)
-        storage_ref = path
+        # MongoDB gridfs is persistent across redeploys — use it before the
+        # ephemeral local disk so recordings survive without R2 configured.
+        mongo_ref = _save_to_mongo(db, filename, raw)
+        if mongo_ref:
+            storage_backend = "mongo"
+            storage_ref = mongo_ref
+        else:
+            os.makedirs(LOCAL_STORAGE_DIR, exist_ok=True)
+            path = os.path.join(LOCAL_STORAGE_DIR, filename)
+            with open(path, "wb") as f:
+                f.write(raw)
+            storage_ref = path
 
     db.call_recordings.insert_one({
         "order_id": order_id,

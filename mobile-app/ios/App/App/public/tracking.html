@@ -9,9 +9,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#060f08;--surface:#0a1a10;--card:#0f2016;--accent:#4caf50;
-  --gold:#ffc107;--red:#ef5350;--blue:#64b5f6;--border:rgba(76,175,80,.14);
-  --muted:#81c784;--dim:#4a7c59;--text:#e8f5e9;--radius:14px;
+  --bg:#060f08;--surface:#0a1a10;--card:#0f2016;--accent:#f5a623;
+  --gold:#ffb300;--red:#ef5350;--blue:#64b5f6;--border:rgba(245,166,35,.14);
+  --muted:#9fc9a8;--dim:#6b8f76;--text:#e8f5e9;--radius:14px;
 }
 html,body{height:100%;font-family:'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 input,select,textarea{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;width:100%;outline:none}
@@ -27,7 +27,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 }
 .topbar-left{display:flex;align-items:center;gap:10px}
 .topbar-logo{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.5px}
-.live-badge{display:flex;align-items:center;gap:5px;background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.3);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:var(--accent)}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:var(--accent)}
 .live-badge .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:livePulse 1.5s infinite}
 @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 .eta-badge{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;font-family:monospace;color:var(--gold)}
@@ -38,11 +38,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 .steps-row::before{content:'';position:absolute;top:14px;left:24px;right:24px;height:2px;background:var(--border);z-index:0}
 .step-item{display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;z-index:1;flex:1}
 .step-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--border);background:var(--card);color:var(--dim);transition:all .4s}
-.step-item.done .step-circle{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 10px rgba(76,175,80,.4)}
+.step-item.done .step-circle{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 10px rgba(245,166,35,.4)}
 .step-item.active .step-circle{background:var(--gold);border-color:var(--gold);color:#000;animation:stepPulse 1.5s infinite}
 @keyframes stepPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.4)}50%{box-shadow:0 0 0 8px rgba(255,193,7,0)}}
 .step-label{font-size:8px;font-weight:600;color:var(--dim);text-transform:uppercase;text-align:center;letter-spacing:.2px}
-.status-text{text-align:center;font-size:14px;font-weight:700;color:var(--accent);margin-top:4px;padding:4px;border-radius:8px;background:rgba(76,175,80,.06)}
+.status-text{text-align:center;font-size:14px;font-weight:700;color:var(--accent);margin-top:4px;padding:4px;border-radius:8px;background:rgba(245,166,35,.06)}
 
 /* MAIN CONTENT - MAP TAKES FULL SPACE */
 .main{flex:1;position:relative;overflow:hidden}
@@ -60,12 +60,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   box-shadow:0 -4px 24px rgba(0,0,0,.5)
 }
 .rider-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.rider-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary,#1b6b3a),var(--accent));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rider-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary,#0d5c3f),var(--accent));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .rider-details{flex:1}
 .rider-name{font-weight:700;font-size:14px;margin-bottom:2px}
 .rider-sub{font-size:11px;color:var(--muted)}
-.rider-call-btn{width:40px;height:40px;border-radius:50%;background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.3);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.rider-call-btn:hover{background:rgba(76,175,80,.25);transform:scale(1.05)}
+.rider-call-btn{width:40px;height:40px;border-radius:50%;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.rider-call-btn:hover{background:rgba(245,166,35,.25);transform:scale(1.05)}
 
 .metrics{display:flex;gap:10px}
 .metric{flex:1;text-align:center;padding:8px;background:var(--card);border-radius:10px}
@@ -78,12 +78,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   background:linear-gradient(transparent,rgba(6,15,8,.97) 25%);
   padding:50px 16px 20px;display:none
 }
-.confirm-card{background:var(--card);border:2px solid var(--accent);border-radius:var(--radius);padding:20px;text-align:center;box-shadow:0 -8px 32px rgba(76,175,80,.15)}
+.confirm-card{background:var(--card);border:2px solid var(--accent);border-radius:var(--radius);padding:20px;text-align:center;box-shadow:0 -8px 32px rgba(245,166,35,.15)}
 .confirm-icon{font-size:48px;margin-bottom:8px}
 .confirm-title{font-size:18px;font-weight:800;margin-bottom:4px;color:var(--accent)}
 .confirm-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
-.confirm-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--primary,#1b6b3a),var(--accent));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.confirm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(76,175,80,.4)}
+.confirm-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--primary,#0d5c3f),var(--accent));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.confirm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(245,166,35,.4)}
 
 /* REFUND MESSAGE */
 .refund-banner{
@@ -110,7 +110,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 }
 
 /* TOAST */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#0a2010;border:1px solid rgba(76,175,80,.4);color:var(--accent);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:transform .4s;pointer-events:none;white-space:nowrap}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#0a2010;border:1px solid rgba(245,166,35,.4);color:var(--accent);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:transform .4s;pointer-events:none;white-space:nowrap}
 #toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -119,6 +119,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-left">
+      <a href="index.html" style="color:var(--dim);font-size:16px;text-decoration:none;display:flex;align-items:center;gap:6px" title="Back to site">
+        <i class="fas fa-arrow-left"></i>
+      </a>
       <span class="topbar-logo">🛵 THOOKU</span>
       <div class="live-badge"><span class="dot"></span>LIVE</div>
     </div>
@@ -140,6 +143,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
       <div class="step-item" id="s-delivered"><div class="step-circle">🏠</div><div class="step-label">Delivered</div></div>
     </div>
     <div class="status-text" id="statusText">Order Confirmed</div>
+    <div style="display:none;margin-top:10px" id="cancelRow">
+      <button onclick="cancelOrder()" style="background:rgba(239,83,80,.1);color:#ef5350;border:1px solid rgba(239,83,80,.4);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="fas fa-times-circle"></i> Cancel Order &amp; Get Refund
+      </button>
+    </div>
   </div>
 
   <!-- MAIN: MAP -->
@@ -283,7 +291,7 @@ function initMap(rLat,rLng,cLat,cLng) {
   };
   locateBtn.addTo(map);
 
-  restaurantMarker = L.marker([rLat,rLng],{icon:makeIcon('🏪',40,'#4caf50','Restaurant')}).addTo(map);
+  restaurantMarker = L.marker([rLat,rLng],{icon:makeIcon('🏪',40,'#f5a623','Restaurant')}).addTo(map);
   customerMarker = L.marker([cLat,cLng],{icon:makeIcon('📍',40,'#64b5f6','Delivery')}).addTo(map);
   riderMarker = L.marker([rLat,rLng],{icon:makeIcon('🛵',44,'#ff9800','Rider'),zIndexOffset:1000}).addTo(map);
 
@@ -397,6 +405,10 @@ function updateSteps(status, orderData){
   if (status === 'accepted' && !order.rider_id) label = 'Looking for delivery partner...';
   if (status === 'pending') label = 'Waiting for restaurant to accept...';
   setText('statusText',label);
+  // Cancel + refund button only while order is pending (before the
+  // restaurant accepts) — once accepted the button disappears.
+  var cancelRow=document.getElementById('cancelRow');
+  if(cancelRow) cancelRow.style.display=(status==='pending')?'block':'none';
   if(status==='delivered'){
     showConfirmDelivery();
   }
@@ -429,10 +441,34 @@ async function confirmDelivery(){
     } else {
       showToast('Already confirmed!','success');
       document.getElementById('confirmOverlay').style.display='none';
+      document.getElementById('riderOverlay').style.display='none';
     }
   }catch(e){
     showToast('Delivery confirmed!','success');
     document.getElementById('confirmOverlay').style.display='none';
+  }
+}
+
+// ── CANCEL ORDER (auto refunds if already paid) ──────────────
+
+async function cancelOrder(){
+  if(!ORDER_ID) return;
+  if(!token){ showToast('Please login to cancel','warning'); return; }
+  if(!confirm('Cancel this order? If you already paid, your money is refunded automatically.')) return;
+  try{
+    var res=await fetch(API+'/orders/'+ORDER_ID+'/cancel',{method:'PATCH',headers:HDR});
+    var d=await res.json();
+    if(d.success){
+      showToast(d.message+(d.refunded?' — Refund processed!':' — No charge taken.'),'success');
+      var cancelRow=document.getElementById('cancelRow');
+      if(cancelRow) cancelRow.style.display='none';
+      setText('statusText','Order Cancelled');
+      document.getElementById('statusText').style.color='#ef5350';
+    } else {
+      showToast(d.message||'Could not cancel order','error');
+    }
+  }catch(e){
+    showToast('Could not cancel order','error');
   }
 }
 
@@ -599,6 +635,7 @@ function startDemo(){
 var pc = null, callOrderId = '', callTargetName = '';
 var callTimerInterval = null, callStartTime = null, callMuted = false, callStream = null;
 var callFallbackTimer = null;
+var recorder = null, recordedChunks = [], recordingAudioCtx = null;
 var _audioCtx = null;
 
 function unlockAudio(){
@@ -665,11 +702,23 @@ function playRemoteStream(stream){
   // A real <audio> element is required to reliably play remote WebRTC audio
   // in WebKit-based WebViews (iOS/Android) - routing purely through
   // AudioContext.createMediaStreamSource() silently produces no sound there.
+  // The element is kept off-screen (not display:none) because some WebViews
+  // also drop audio from hidden elements.
   var el = document.getElementById('remoteCallAudio');
-  if(el){
-    el.srcObject = stream;
-    el.play().catch(function(e){ console.warn('Remote audio play() blocked:', e); });
+  if(!el) return;
+  el.muted = false;
+  el.volume = 1;
+  el.srcObject = stream;
+  function tryPlay(){
+    var p = el.play();
+    if(p && p.catch) p.catch(function(){});
   }
+  tryPlay();
+  // iOS/WebView autoplay policies may reject until a user gesture — retry
+  // on the next tap/touch on the call overlay.
+  var unlock = function(){ el.muted = false; tryPlay(); };
+  document.addEventListener('touchend', unlock, { once: true, passive: true });
+  document.addEventListener('click', unlock, { once: true, passive: true });
 }
 
 function showCallOverlay(name, status){
@@ -760,6 +809,7 @@ function acceptCall(){
     callStream = stream;
     pc = createPeerConnection(callOrderId, function(remoteStream){
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
@@ -811,11 +861,70 @@ function stopCallTimer(){
   callStartTime = null;
 }
 
+// Records both sides of the call locally (mixed via Web Audio), at a low
+// bitrate since this is voice-only and storage should stay small. Uploaded
+// to the backend once the call ends. A recording notice is shown in the
+// call UI (see callOverlay HTML) so both parties are informed.
+function startCallRecording(localStream, remoteStream){
+  try{
+    if(!localStream || !remoteStream) return;
+    recordingAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var dest = recordingAudioCtx.createMediaStreamDestination();
+    recordingAudioCtx.createMediaStreamSource(localStream).connect(dest);
+    recordingAudioCtx.createMediaStreamSource(remoteStream).connect(dest);
+    var mimeType = 'audio/webm;codecs=opus';
+    if(!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+    recordedChunks = [];
+    recorder = new MediaRecorder(dest.stream, mimeType ? {mimeType: mimeType, audioBitsPerSecond: 16000} : {audioBitsPerSecond: 16000});
+    recorder.ondataavailable = function(e){ if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    recorder.start(1000);
+  }catch(e){ console.warn('Call recording unavailable:', e); recorder = null; }
+}
+
+function stopAndUploadRecording(orderId){
+  if(!recorder){ return; }
+  var r = recorder, oid = orderId;
+  recorder = null;
+  try{
+    r.onstop = function(){
+      try{
+        if(recordingAudioCtx){ recordingAudioCtx.close(); recordingAudioCtx = null; }
+        if(!recordedChunks.length || !oid) return;
+        var blob = new Blob(recordedChunks, {type: r.mimeType || 'audio/webm'});
+        recordedChunks = [];
+        var fd = new FormData();
+        fd.append('order_id', oid);
+        fd.append('role', 'customer');
+        fd.append('audio', blob, 'call_' + oid + '_' + Date.now() + '.webm');
+        // Upload with retries — a single flaky network event shouldn't lose
+        // the whole recording. Tries 3 times with 2s gaps.
+        var upload = function(attempt){
+          fetch(API + '/calls/recording', {
+            method: 'POST',
+            headers: {'Authorization': HDR.Authorization},
+            body: fd
+          }).then(function(res){
+            if(res.ok){ console.log('Call recording uploaded'); return; }
+            throw new Error('HTTP ' + res.status);
+          }).catch(function(e){
+            console.warn('Recording upload failed (attempt ' + attempt + '):', e);
+            if(attempt < 3) setTimeout(function(){ upload(attempt + 1); }, 2000);
+            else showToast('Recording upload failed — check network', 'error');
+          });
+        };
+        upload(1);
+      }catch(e){ console.warn('Recording upload failed:', e); }
+    };
+    r.stop();
+  }catch(e){}
+}
+
 async function endCall(){
   hideIncomingCallScreen();
   if(callFallbackTimer){ clearTimeout(callFallbackTimer); callFallbackTimer = null; }
   if(pc){ pc.close(); pc = null; }
   if(callStream){ callStream.getTracks().forEach(function(t){ t.stop(); }); callStream = null; }
+  stopAndUploadRecording(callOrderId);
   stopCallTimer();
   hideCallOverlay();
   if(callOrderId && socket){ socket.emit('call_end',{order_id:callOrderId}); }
@@ -843,6 +952,7 @@ function callRider(){
     pc = createPeerConnection(ORDER_ID, function(remoteStream){
       if(callFallbackTimer){ clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t){ pc.addTrack(t,stream); });
@@ -958,13 +1068,14 @@ document.addEventListener('DOMContentLoaded',function(){
 </style>
 
 <!-- ===== ACTIVE CALL SCREEN (WhatsApp-style, full screen) ===== -->
-<audio id="remoteCallAudio" autoplay playsinline style="display:none"></audio>
+<audio id="remoteCallAudio" autoplay playsinline style="position:fixed;left:-99999px;top:0;width:2px;height:2px;opacity:0.01"></audio>
 <div id="callOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0f2016 0%,#153a20 60%,#1B7A3D 130%);flex-direction:column;align-items:center;justify-content:space-between;padding:60px 24px 50px;color:#fff;font-family:inherit">
   <div></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
     <div style="width:110px;height:110px;border-radius:50%;background:#2E8B57;display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:700" id="callOverlayInitial">R</div>
     <div style="font-size:22px;font-weight:700" id="callOverlayName">Call</div>
-    <div style="font-size:15px;color:#a5d6a7" id="callOverlayStatus">Ringing...</div>
+    <div style="font-size:15px;color:#9fc9a8" id="callOverlayStatus">Ringing...</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:6px">🔴 This call may be recorded for safety &amp; quality</div>
   </div>
   <div style="display:flex;gap:28px;align-items:center">
     <button onclick="toggleMute()" id="callMuteBtn" style="background:rgba(255,255,255,.14);border:none;border-radius:50%;width:56px;height:56px;cursor:pointer;font-size:22px;color:#fff" title="Mute">🔊</button>
