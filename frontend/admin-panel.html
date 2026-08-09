@@ -882,6 +882,8 @@ const tabLoaders = {
   recordings: loadCallRecordings
 };
 
+let ordersAutoRefreshTimer = null;
+
 function showTab(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -889,16 +891,16 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   document.getElementById('pageTitle').textContent = tabTitles[name] || name;
   if (tabLoaders[name]) tabLoaders[name]();
-}
 
-// Live-refresh open tabs so new orders / status changes appear without
-// switching away and back. Orders are re-polled every 12s while visible.
-setInterval(() => {
-  const ordersTab = document.getElementById('tab-orders');
-  if (ordersTab && ordersTab.classList.contains('active')) {
-    loadOrders().then(filterOrders);
+  // Orders change constantly (new orders, status updates, rider assignment) —
+  // auto-refresh every 8s while this tab is open instead of requiring a
+  // manual tab switch to see anything new. Stopped when leaving the tab so
+  // it doesn't poll uselessly in the background.
+  if (ordersAutoRefreshTimer) { clearInterval(ordersAutoRefreshTimer); ordersAutoRefreshTimer = null; }
+  if (name === 'orders') {
+    ordersAutoRefreshTimer = setInterval(() => loadOrders().then(filterOrders), 8000);
   }
-}, 12000);
+}
 
 // ═══════════════════════════════════════
 // API HELPERS

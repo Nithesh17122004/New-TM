@@ -188,7 +188,7 @@ def _send_apns_voip(token, call_id, order_id, caller_name, caller_role):
         logger.warning(f'APNs VoIP send failed: {e}')
 
 
-def send_delivery_offer_push(user_id, order_id, restaurant_name, total, distance_km, far_delivery=False):
+def send_delivery_offer_push(user_id, order_id, restaurant_name, total, distance_km, far_offer=False):
     """
     Wake the rider's native app (FCM/APNs) with a delivery-offer notification
     so they can accept or reject, even when the app is in background/killed.
@@ -216,7 +216,7 @@ def send_delivery_offer_push(user_id, order_id, restaurant_name, total, distance
                         'restaurantName': restaurant_name or '',
                         'total': str(total or ''),
                         'distanceKm': str(round(distance_km, 2) if distance_km else ''),
-                        'farDelivery': '1' if far_delivery else '0',
+                        'farOffer': '1' if far_offer else '0',
                     },
                     android=messaging.AndroidConfig(priority='high'),
                 )
@@ -235,7 +235,7 @@ def send_delivery_offer_push(user_id, order_id, restaurant_name, total, distance
                     'restaurantName': restaurant_name or '',
                     'total': str(total or ''),
                     'distanceKm': str(round(distance_km, 2) if distance_km else ''),
-                    'farDelivery': '1' if far_delivery else '0',
+                    'farOffer': '1' if far_offer else '0',
                 })
                 topic = os.environ.get('APNS_TOPIC', 'in.thookumadurai.app.voip')
                 client.send_notification(d['token'], payload, topic=topic)

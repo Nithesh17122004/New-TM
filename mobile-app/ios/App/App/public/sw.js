@@ -10,6 +10,34 @@ self.addEventListener('push', function (event) {
   try {
     data = event.data.json();
   } catch (e) { return; }
+
+  // New delivery offer (rider dashboard) — accept/reject happens in the app
+  if (data.type === 'delivery_offer') {
+    const tag = 'thooku-offer-' + data.order_id;
+    const dist = data.distance_km ? ' · ' + data.distance_km + ' km away' : '';
+    const far = data.far_offer ? ' · Farther than usual (no nearer rider available)' : '';
+    event.waitUntil((async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const c of clients) {
+        if (c.url.includes('rider-dashboard')) {
+          c.focus();
+          c.postMessage({ type: 'THOOKU_DELIVERY_OFFER', ...data });
+          return;
+        }
+      }
+      self.registration.showNotification('New delivery offer 🛵', {
+        body: 'Pick up from ' + (data.restaurant_name || 'Restaurant') + dist + far + '. Open the app to accept or reject.',
+        icon: '/icon-192.png',
+        badge: '/icon-72.png',
+        tag: tag,
+        data: { type: 'delivery_offer', ...data },
+        requireInteraction: true,
+        vibrate: [0, 300, 150, 300]
+      });
+    })());
+    return;
+  }
+
   if (!data.callId) return;
   const tag = 'thooku-call-' + data.callId;
   const key = 'thooku_pending_call_' + data.callId;
@@ -45,7 +73,20 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   const data = event.notification.data;
-  if (!data || !data.callId) return;
+  if (!data) return;
+  if (data.type === 'delivery_offer') {
+    event.waitUntil((async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const c of clients) {
+        if (c.url.includes('rider-dashboard')) { c.focus(); return; }
+      }
+      await self.clients.openWindow('/rider-dashboard');
+      // The dashboard fetches /riders/pending-offer on load and shows
+      // the accept/reject card for this offer.
+    })());
+    return;
+  }
+  if (!data.callId) return;
   if (event.action === 'decline') {
     fetch(API_BASE + '/api/v1/push/call-declined', {
       method: 'POST',

@@ -10,14 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-  .logout-corner{position:fixed;top:14px;right:14px;z-index:9999;background:#0f2016;border:1px solid rgba(76,175,80,.14);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:13px;color:#81c784;display:flex;align-items:center;gap:6px;font-family:'Inter',sans-serif}
+  .logout-corner{position:fixed;top:14px;right:14px;z-index:9999;background:#0f2016;border:1px solid rgba(245,166,35,.14);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:13px;color:#9fc9a8;display:flex;align-items:center;gap:6px;font-family:'Inter',sans-serif}
   .logout-corner:hover{background:rgba(239,83,80,.1);color:#ef5350}@media(max-width:480px){.logout-corner{top:8px;right:8px;padding:6px 10px;font-size:11px}}
   </style>
   <link rel="stylesheet" href="css/main.css">
   <script src="js/auth-guard.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-    :root{--primary:#1b6b3a;--accent:#4caf50;--gold:#ffc107;--dark:#060f08;--mid:#0a1a10;--card:#0f2016;--border:rgba(76,175,80,.12);--border-h:rgba(76,175,80,.3);--muted:#81c784;--dim:#4a7c59;--radius:16px;--trans:all .25s ease}
+    :root{--primary:#0d5c3f;--accent:#f5a623;--gold:#ffb300;--dark:#060f08;--mid:#0a1a10;--card:#0f2016;--border:rgba(245,166,35,.14);--border-h:rgba(245,166,35,.35);--muted:#9fc9a8;--dim:#6b8f76;--radius:16px;--trans:all .25s ease}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',sans-serif;background:var(--dark);color:#e8f5e9;min-height:100vh;padding-bottom:72px}
 
@@ -25,7 +25,7 @@
     .rider-header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,26,16,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;padding:0 16px;justify-content:space-between}
     .rider-brand{display:flex;align-items:center;gap:8px;font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:var(--accent)}
     .rider-profile{display:flex;align-items:center;gap:8px}
-    .rider-avatar{width:36px;height:36px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid rgba(76,175,80,.4)}
+    .rider-avatar{width:36px;height:36px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid rgba(245,166,35,.4)}
     .rider-info{text-align:right}
     .rider-name{font-size:13px;font-weight:700}
     .rider-id-text{font-size:10px;color:var(--dim)}
@@ -51,11 +51,11 @@
     .big-slider{position:absolute;inset:0;background:#1a2e1a;border:2px solid #2a3a2a;border-radius:20px;cursor:pointer;transition:.4s}
     .big-slider::before{content:'';position:absolute;width:32px;height:32px;background:#4a5a4a;border-radius:50%;top:2px;left:2px;transition:.4s;box-shadow:0 2px 8px rgba(0,0,0,.4)}
     .big-toggle input:checked+.big-slider{background:var(--primary);border-color:var(--accent)}
-    .big-toggle input:checked+.big-slider::before{transform:translateX(32px);background:var(--accent);box-shadow:0 0 14px rgba(76,175,80,.6)}
+    .big-toggle input:checked+.big-slider::before{transform:translateX(32px);background:var(--accent);box-shadow:0 0 14px rgba(245,166,35,.6)}
     .online-desc{font-size:12px;color:var(--dim)}
 
     /* EARNINGS CARD */
-    .earnings-card{background:linear-gradient(135deg,var(--primary),#1a5e35);border:1px solid rgba(76,175,80,.3);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+    .earnings-card{background:linear-gradient(135deg,var(--primary),#0d5c3f);border:1px solid rgba(245,166,35,.3);border-radius:var(--radius);padding:20px;margin-bottom:14px}
     .earn-title{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:1px;margin-bottom:4px}
     .earn-amount{font-family:'Poppins',sans-serif;font-size:42px;font-weight:800;color:#fff}
     .earn-stats{display:flex;gap:20px;margin-top:12px}
@@ -82,13 +82,13 @@
     .btn-reject-big{flex:1;padding:14px;background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);color:#ef5350;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:var(--trans)}
     .btn-reject-big:hover{background:rgba(239,83,80,.2)}
     .btn-accept-big{flex:2;padding:14px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:var(--trans)}
-    .btn-accept-big:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(76,175,80,.4)}
+    .btn-accept-big:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.4)}
 
     /* STEP PROGRESS */
     .step-progress{display:flex;align-items:center;gap:0;margin:14px 0}
     .step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:2px solid var(--border);background:var(--card);color:var(--dim);transition:var(--trans)}
     .step-dot.done{background:var(--primary);border-color:var(--accent);color:var(--accent)}
-    .step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 14px rgba(76,175,80,.5)}
+    .step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 14px rgba(245,166,35,.5)}
     .step-line{flex:1;height:2px;background:var(--border)}
     .step-line.done{background:var(--accent)}
     .step-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:12px}
@@ -104,9 +104,9 @@
     .btn-pickup{background:rgba(33,150,243,.1);border:2px solid rgba(33,150,243,.3);color:#64b5f6}
     .btn-pickup:hover{background:rgba(33,150,243,.2)}
     .btn-deliver{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}
-    .btn-deliver:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(76,175,80,.4)}
-    .btn-call{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:rgba(76,175,80,.1);border:1px solid var(--border-h);color:var(--accent);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;transition:var(--trans)}
-    .btn-call:hover{background:rgba(76,175,80,.2)}
+    .btn-deliver:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.4)}
+    .btn-call{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:rgba(245,166,35,.1);border:1px solid var(--border-h);color:var(--accent);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;transition:var(--trans)}
+    .btn-call:hover{background:rgba(245,166,35,.2)}
 
     /* EARNINGS TAB */
     .period-tabs{display:flex;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:16px}
@@ -132,7 +132,7 @@
 
     /* PROFILE */
     .profile-avatar-wrap{text-align:center;padding:20px 0;margin-bottom:14px}
-    .profile-avatar{width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;border:3px solid rgba(76,175,80,.4)}
+    .profile-avatar{width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;border:3px solid rgba(245,166,35,.4)}
     .profile-name-big{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800}
     .profile-rating{color:var(--gold);font-size:16px;margin-top:4px}
     .doc-item{display:flex;align-items:center;justify-content:space-between;padding:13px;background:var(--dark);border-radius:10px;margin-bottom:8px}
@@ -146,14 +146,14 @@
     .form-control{width:100%;padding:11px 13px;background:var(--dark);border:1px solid var(--border);border-radius:10px;color:#e8f5e9;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:var(--trans)}
     .form-control:focus{border-color:var(--accent)}
     .btn-save{width:100%;padding:13px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;transition:var(--trans)}
-    .btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(76,175,80,.3)}
+    .btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
     .btn-logout{width:100%;padding:12px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.3);color:#ef5350;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;transition:var(--trans)}
     .btn-logout:hover{background:rgba(239,83,80,.15)}
 
     /* TOAST */
     .toast-container{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:90%;max-width:380px}
     .toast{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;animation:toastSlide .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-    .toast.success{border-color:rgba(76,175,80,.5)}
+    .toast.success{border-color:rgba(245,166,35,.5)}
     .toast.error{border-color:rgba(239,83,80,.4)}
     .toast.warning{border-color:rgba(255,193,7,.4)}
     @keyframes toastSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -171,6 +171,7 @@
 <header class="rider-header">
   <div class="rider-brand"><span>🏍️</span> Rider</div>
   <div style="display:flex;align-items:center;gap:10px">
+    <a href="index.html" title="Back to site" style="color:var(--dim);text-decoration:none;font-size:12px;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:6px 10px"><i class="fas fa-arrow-left"></i> Site</a>
     <span id="gpsIndicator" style="font-size:11px;color:var(--dim);font-weight:600">📡 GPS Off</span>
     <div class="rider-profile">
       <div class="rider-info">
@@ -218,7 +219,7 @@
       </div>
 
       <div class="info-row">
-        <div class="info-row-icon" style="background:rgba(76,175,80,.12)">🏪</div>
+        <div class="info-row-icon" style="background:rgba(245,166,35,.12)">🏪</div>
         <div class="info-row-body">
           <div class="info-row-label">PICKUP FROM</div>
           <div class="info-row-val" id="incomingPickup">—</div>
@@ -252,7 +253,7 @@
         <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite"></span>
         <span style="font-weight:800;font-size:15px">ACTIVE DELIVERY</span>
         <span id="activeOrderBadge" style="margin-left:6px;font-size:10px;background:rgba(255,152,0,.15);color:var(--gold-dark);padding:2px 8px;border-radius:8px">1/3</span>
-        <span style="margin-left:auto;font-size:12px;color:var(--dim);background:rgba(76,175,80,.1);padding:3px 10px;border-radius:10px" id="activeOrderId">—</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--dim);background:rgba(245,166,35,.1);padding:3px 10px;border-radius:10px" id="activeOrderId">—</span>
       </div>
 
       <div class="step-progress">
@@ -272,7 +273,7 @@
       </div>
 
       <div class="info-row">
-        <div class="info-row-icon" style="background:rgba(76,175,80,.12)">🏪</div>
+        <div class="info-row-icon" style="background:rgba(245,166,35,.12)">🏪</div>
         <div class="info-row-body">
           <div class="info-row-label">PICKUP</div>
           <div class="info-row-val" id="activePickup">—</div>
@@ -338,7 +339,7 @@
       <div id="earnDeliveryList"></div>
     </div>
 
-    <div class="card" style="background:linear-gradient(135deg,rgba(27,107,58,.3),rgba(76,175,80,.1))">
+    <div class="card" style="background:linear-gradient(135deg,rgba(13,92,63,.3),rgba(245,166,35,.08))">
       <div style="font-size:14px;font-weight:700;margin-bottom:10px">💳 Next Settlement</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div style="font-size:12px;color:var(--dim)">Settlement Date</div><div style="font-weight:700">Jun 10, 2026</div></div>
@@ -408,7 +409,7 @@
           <input type="file" accept="image/*,.pdf" style="display:none" id="file-aadhaar" onchange="handleDocUpload('aadhaar', this)">
         </label>
       </div>
-      <div id="preview-aadhaar" style="display:none;margin:-8px 0 12px;padding:8px;background:rgba(76,175,80,0.08);border-radius:8px;font-size:12px;color:var(--accent)"></div>
+      <div id="preview-aadhaar" style="display:none;margin:-8px 0 12px;padding:8px;background:rgba(245,166,35,0.08);border-radius:8px;font-size:12px;color:var(--accent)"></div>
 
       <!-- Driving License -->
       <div class="doc-item" id="doc-license">
@@ -421,7 +422,7 @@
           <input type="file" accept="image/*,.pdf" style="display:none" id="file-license" onchange="handleDocUpload('license', this)">
         </label>
       </div>
-      <div id="preview-license" style="display:none;margin:-8px 0 12px;padding:8px;background:rgba(76,175,80,0.08);border-radius:8px;font-size:12px;color:var(--accent)"></div>
+      <div id="preview-license" style="display:none;margin:-8px 0 12px;padding:8px;background:rgba(245,166,35,0.08);border-radius:8px;font-size:12px;color:var(--accent)"></div>
 
       <!-- Vehicle RC -->
       <div class="doc-item" id="doc-rc">
@@ -472,6 +473,18 @@ let pendingCallOffer = null;
 let HISTORY_ORDERS = [];
 
 function logout() {
+  // Auto-offline on logout so no order offers/notifications arrive
+  try {
+    const a = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+    if (a.token) {
+      fetch(`${API_BASE}/riders/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + a.token },
+        body: JSON.stringify({ is_online: false })
+      }).catch(function(){});
+    }
+  } catch (e) {}
+  if (socket) { try { socket.disconnect(); } catch (e) {} }
   localStorage.removeItem('tm_auth');
   window.location.href = 'login.html';
 }
@@ -570,6 +583,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!authData.phone) {
     showToast('Add your mobile number in Profile for masked calls', 'warning');
   }
+  // Logged in ⇒ online (accept & receive order offers). Logged out ⇒ offline.
+  ensureOnlineState();
   renderEarnings();
   renderHistory();
   renderEarnDeliveries();
@@ -577,6 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRiderEarnings();
   startGPS();
   setInterval(loadRiderOrders, 20000);
+  checkPendingOffer();
 
   // Register Service Worker + subscribe to push
   if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -584,6 +600,9 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.serviceWorker.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'THOOKU_INCOMING_CALL') {
           _tryHandleIncomingCall(event.data);
+        }
+        if (event.data && event.data.type === 'THOOKU_DELIVERY_OFFER') {
+          showDeliveryOffer(event.data);
         }
       });
       reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array('BNnzcMGGloSz2cEO5alGmpncGahhiXSfzTQEAUh5gd7NHQgkpTv6edQeaoUPNGCXQRoDS5BjwloIa8utWD2ueEs') }).then(function(sub) {
@@ -605,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (RIDER_ID) {
         socket.emit('join_rider', { rider_id: RIDER_ID });
         if (currentOrderId) socket.emit('join_order', { order_id: currentOrderId });
+        checkPendingOffer();
       }
     });
     socket.on('new_order', (data) => {
@@ -612,23 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Sequential delivery offer — targeted to this specific rider
     socket.on('delivery_offer', (data) => {
-      if (data.order_id) {
-        currentOrderId = data.order_id;
-        activeOrder = data;
-        const pickupEl = document.getElementById('incomingPickup');
-        const dropEl = document.getElementById('incomingDrop');
-        if (pickupEl) pickupEl.textContent = data.restaurant_name || 'Restaurant';
-        if (dropEl) dropEl.textContent = data.delivery_address ? formatAddr(data.delivery_address) : '📍 Customer address';
-        var inc = document.getElementById('incomingCard');
-        if (inc) { inc.style.display = 'block'; }
-        var act = document.getElementById('activeCard');
-        if (act) { act.style.display = 'none'; }
-        showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.', 'warning');
-        startAcceptCountdown(data.offer_timeout || 120);
-        playRingtone();
-        if (_ringStopTimer) clearTimeout(_ringStopTimer);
-        _ringStopTimer = setTimeout(stopRingtone, 10000);
-      }
+      if (data.order_id) showDeliveryOffer(data);
     });
     socket.on('order_taken', (data) => {
       if (currentOrderId && data.order_id === currentOrderId) {
@@ -670,6 +674,23 @@ function switchTab(tab) {
 // ============================================================
 // ONLINE TOGGLE
 // ============================================================
+function ensureOnlineState() {
+  // Rider logged in ⇒ must be ONLINE to receive order offers.
+  // (Logout sets is_online=false — symmetric with restaurant login/logout.)
+  isOnline = true;
+  const tog = document.getElementById('onlineToggle');
+  if (tog) tog.checked = true;
+  const txt  = document.getElementById('onlineText');
+  const desc = document.getElementById('onlineDesc');
+  if (txt)  { txt.textContent  = '🟢 ONLINE — READY TO DELIVER'; txt.style.color = 'var(--accent)'; }
+  if (desc) { desc.textContent = 'You are now receiving delivery requests'; }
+  fetch(`${API_BASE}/riders/status`, {
+    method: 'PATCH',
+    headers: HEADERS,
+    body: JSON.stringify({ is_online: true, is_available: true })
+  }).catch(function(){});
+}
+
 async function toggleOnline() {
   isOnline = document.getElementById('onlineToggle').checked;
   const txt  = document.getElementById('onlineText');
@@ -696,6 +717,44 @@ async function toggleOnline() {
   try {
     await fetch(`${API_BASE}/riders/status`, { method:'PATCH', headers:HEADERS, body:JSON.stringify({ is_online: isOnline }) });
   } catch {}
+}
+
+// ============================================================
+// DELIVERY OFFER (accept/reject card)
+// ============================================================
+function showDeliveryOffer(data) {
+  if (!data || !data.order_id) return;
+  currentOrderId = data.order_id;
+  activeOrder = data;
+  const pickupEl = document.getElementById('incomingPickup');
+  const dropEl = document.getElementById('incomingDrop');
+  if (pickupEl) pickupEl.textContent = data.restaurant_name || 'Restaurant';
+  if (dropEl) dropEl.textContent = data.delivery_address ? formatAddr(data.delivery_address) : '📍 Customer address';
+  const inc = document.getElementById('incomingCard');
+  if (inc) { inc.style.display = 'block'; }
+  const act = document.getElementById('activeCard');
+  if (act) { act.style.display = 'none'; }
+  showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.', 'warning');
+  if (data.far_offer) {
+    showToast('📍 This one is farther than usual — no nearer rider was available.', 'info');
+  }
+  startAcceptCountdown(data.offer_timeout || 120);
+  playRingtone();
+  if (_ringStopTimer) clearTimeout(_ringStopTimer);
+  _ringStopTimer = setTimeout(stopRingtone, 10000);
+}
+
+// Re-fetch any offer that is still pending for this rider — covers the case
+// where the app was opened from a push notification after the socket event.
+async function checkPendingOffer() {
+  try {
+    const res = await fetch(`${API_BASE}/riders/pending-offer`, { headers: HEADERS });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.success && data.data && data.data.order_id) {
+      showDeliveryOffer(data.data);
+    }
+  } catch (e) {}
 }
 
 // ============================================================
@@ -819,6 +878,7 @@ let callStartTime = null;
 let callMuted = false;
 let callStream = null;
 let callFallbackTimer = null;
+let recorder = null, recordedChunks = [], recordingAudioCtx = null;
 let _audioCtx = null;
 let _ringtoneInterval = null;
 let _ringStopTimer = null;
@@ -984,11 +1044,58 @@ function stopCallTimer() {
   callStartTime = null;
 }
 
+// Records both sides of the call locally (mixed via Web Audio), at a low
+// bitrate since this is voice-only and storage should stay small. Uploaded
+// to the backend once the call ends. A recording notice is shown in the
+// call UI (see callOverlay HTML) so both parties are informed.
+function startCallRecording(localStream, remoteStream) {
+  try {
+    if (!localStream || !remoteStream) return;
+    recordingAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = recordingAudioCtx.createMediaStreamDestination();
+    recordingAudioCtx.createMediaStreamSource(localStream).connect(dest);
+    recordingAudioCtx.createMediaStreamSource(remoteStream).connect(dest);
+    let mimeType = 'audio/webm;codecs=opus';
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+    recordedChunks = [];
+    recorder = new MediaRecorder(dest.stream, mimeType ? {mimeType, audioBitsPerSecond: 16000} : {audioBitsPerSecond: 16000});
+    recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    recorder.start(1000);
+  } catch (e) { console.warn('Call recording unavailable:', e); recorder = null; }
+}
+
+function stopAndUploadRecording(orderId) {
+  if (!recorder) return;
+  const r = recorder, oid = orderId;
+  recorder = null;
+  try {
+    r.onstop = function() {
+      try {
+        if (recordingAudioCtx) { recordingAudioCtx.close(); recordingAudioCtx = null; }
+        if (!recordedChunks.length || !oid) return;
+        const blob = new Blob(recordedChunks, {type: r.mimeType || 'audio/webm'});
+        recordedChunks = [];
+        const fd = new FormData();
+        fd.append('order_id', oid);
+        fd.append('role', 'rider');
+        fd.append('audio', blob, 'call_' + oid + '_' + Date.now() + '.webm');
+        fetch(API_BASE + '/calls/recording', {
+          method: 'POST',
+          headers: { 'Authorization': HEADERS.Authorization },
+          body: fd
+        }).catch(function() {});
+      } catch (e) { console.warn('Recording upload failed:', e); }
+    };
+    r.stop();
+  } catch (e) {}
+}
+
 async function endCall() {
   stopRingtone();
   if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
   if (pc) { pc.close(); pc = null; }
   if (callStream) { callStream.getTracks().forEach(function(t) { t.stop(); }); callStream = null; }
+  stopAndUploadRecording(callOrderId);
   stopCallTimer();
   hideCallOverlay();
   hideIncomingCall();
@@ -1013,6 +1120,7 @@ async function answerCall() {
     pc = createPeerConnection(callOrderId, function(remoteStream) {
       if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t) { pc.addTrack(t, stream); });
@@ -1048,6 +1156,7 @@ async function callCustomer(orderId) {
     pc = createPeerConnection(orderId, function(remoteStream) {
       if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t) { pc.addTrack(t, stream); });
@@ -1321,6 +1430,18 @@ function uploadDoc(type) {
 }
 
 function doLogout() {
+  // Auto-offline on logout so no order offers/notifications arrive
+  try {
+    const a = JSON.parse(localStorage.getItem('tm_auth') || '{}');
+    if (a.token) {
+      fetch(`${API_BASE}/riders/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + a.token },
+        body: JSON.stringify({ is_online: false })
+      }).catch(function(){});
+    }
+  } catch (e) {}
+  if (socket) { try { socket.disconnect(); } catch (e) {} }
   localStorage.removeItem('tm_auth'); localStorage.removeItem('tm_role');
   window.location.href = 'login.html';
 }
@@ -1380,7 +1501,7 @@ function showToast(msg, type='success') {
     <div style="font-size:13px;color:var(--dim);margin-bottom:24px" id="incomingCallOrder">Order #...</div>
     <div style="display:flex;gap:16px;justify-content:center">
       <button onclick="declineCall()" style="background:#e53935;border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(229,57,53,.4)" title="Decline">📞</button>
-      <button onclick="answerCall()" style="background:var(--accent);border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(76,175,80,.4)" title="Answer">📞</button>
+      <button onclick="answerCall()" style="background:var(--accent);border:none;border-radius:50%;width:60px;height:60px;cursor:pointer;font-size:28px;color:#fff;box-shadow:0 4px 16px rgba(245,166,35,.4)" title="Answer">📞</button>
     </div>
   </div>
 </div>
@@ -1393,6 +1514,7 @@ function showToast(msg, type='success') {
     <div style="flex:1;min-width:0">
       <div style="font-weight:700;font-size:14px" id="callOverlayName">Call</div>
       <div style="font-size:12px;color:var(--dim)" id="callOverlayStatus">00:00</div>
+      <div style="font-size:10px;color:var(--dim);opacity:.7">🔴 Recorded for safety &amp; quality</div>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="toggleMute()" id="callMuteBtn" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;color:#ccc" title="Mute">🔇</button>

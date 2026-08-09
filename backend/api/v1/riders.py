@@ -219,7 +219,7 @@ def get_pending_offer():
             "items": order.get("items", []),
             "total": order.get("total", 0),
             "distance_km": round(distance, 2),
-            "far_delivery": bool(order.get("far_delivery", False)),
+            "far_offer": bool(order.get("far_offer", False)),
             "offer_timeout": 120,
         },
     }), 200

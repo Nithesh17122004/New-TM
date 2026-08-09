@@ -170,6 +170,7 @@ def _billing_charges(item_total: float, delivery_fee: float, settings: dict) -> 
 
 MAX_CONCURRENT_ORDERS = 3
 MAX_ASSIGN_RADIUS_KM = 5.0
+FALLBACK_ASSIGN_RADIUS_KM = 15.0  # used only when nobody is available within the normal radius
 
 
 def _rider_active_count(db, rider_id):
@@ -272,6 +273,21 @@ def _offer_to_next_rider(db, order_id):
         if d <= MAX_ASSIGN_RADIUS_KM and _rider_active_count(db, rider_id) < MAX_CONCURRENT_ORDERS:
             eligible.append((rider, d))
 
+    used_fallback_radius = False
+    if not eligible:
+        # No rider within the normal radius — rather than leaving the order
+        # stuck with nobody notified, fall back to the nearest available
+        # rider within a wider radius. Better to notify a farther rider than
+        # notify no one.
+        for rider in all_online:
+            rider_id = str(rider["_id"])
+            if rider_id in rejected_ids:
+                continue
+            d = dist(rider)
+            if d <= FALLBACK_ASSIGN_RADIUS_KM and _rider_active_count(db, rider_id) < MAX_CONCURRENT_ORDERS:
+                eligible.append((rider, d))
+        used_fallback_radius = bool(eligible)
+
     eligible.sort(key=lambda x: x[1])
 
     if eligible:
@@ -286,6 +302,7 @@ def _offer_to_next_rider(db, order_id):
                     "offered_rider_id": next_rider_id,
                     "last_offer_time": now,
                     "no_riders_left": False,
+                    "far_offer": used_fallback_radius,
                 }
             },
         )
@@ -302,6 +319,7 @@ def _offer_to_next_rider(db, order_id):
                 "total": order.get("total", 0),
                 "distance_km": round(distance, 2),
                 "offer_timeout": 120,
+                "far_offer": used_fallback_radius,  # lets the rider app show "farther than usual" context
             }, room=f"rider_{next_rider_id}")
         except Exception:
             pass
@@ -314,82 +332,17 @@ def _offer_to_next_rider(db, order_id):
                 "restaurant_name": order.get("restaurant_name", ""),
                 "total": order.get("total", 0),
                 "distance_km": round(distance, 2),
-                "far_delivery": False,
+                "far_offer": used_fallback_radius,
             }
             send_delivery_offer_push(next_rider_id, **offer_data)
             notify_rider_delivery_offer(next_rider_id, offer_data)
         except Exception:
             pass
 
-        return {"success": True, "rider_id": next_rider_id, "rider_name": next_rider.get("name", "")}
+        return {"success": True, "rider_id": next_rider_id, "rider_name": next_rider.get("name", ""), "used_fallback_radius": used_fallback_radius}
 
-    # No rider within the usual radius — fall back to the nearest available
-    # rider anywhere (so an order never sits unclaimed while online riders
-    # exist elsewhere). Marked as a far-delivery offer for the rider UI.
-    far_eligible = [
-        (rider, dist(rider)) for rider in all_online
-        if str(rider["_id"]) not in rejected_ids
-        and _rider_active_count(db, str(rider["_id"])) < MAX_CONCURRENT_ORDERS
-    ]
-    far_eligible.sort(key=lambda x: x[1])
-
-    if far_eligible:
-        next_rider, distance = far_eligible[0]
-        next_rider_id = str(next_rider["_id"])
-        now = int(time.time())
-
-        db.orders.update_one(
-            {"_id": order_id},
-            {
-                "$set": {
-                    "offered_rider_id": next_rider_id,
-                    "last_offer_time": now,
-                    "no_riders_left": False,
-                    "far_delivery": True,
-                }
-            },
-        )
-
-        try:
-            from app import socketio
-            socketio.emit("delivery_offer", {
-                "order_id": order_id,
-                "restaurant_name": order.get("restaurant_name", ""),
-                "restaurant_lat": rest_lat,
-                "restaurant_lng": rest_lng,
-                "delivery_address": order.get("delivery_address", {}),
-                "items": order.get("items", []),
-                "total": order.get("total", 0),
-                "distance_km": round(distance, 2),
-                "far_delivery": True,
-                "offer_timeout": 120,
-            }, room=f"rider_{next_rider_id}")
-        except Exception:
-            pass
-
-        try:
-            from api.v1.push_calls import send_delivery_offer_push
-            from api.v1.push_notifications import notify_rider_delivery_offer
-            offer_data = {
-                "order_id": order_id,
-                "restaurant_name": order.get("restaurant_name", ""),
-                "total": order.get("total", 0),
-                "distance_km": round(distance, 2),
-                "far_delivery": True,
-            }
-            send_delivery_offer_push(next_rider_id, **offer_data)
-            notify_rider_delivery_offer(next_rider_id, offer_data)
-        except Exception:
-            pass
-
-        return {"success": True, "rider_id": next_rider_id, "rider_name": next_rider.get("name", "")}
-
-    # No eligible riders found — check if any riders exist nearby at all
-    any_nearby = [
-        r for r in all_online
-        if dist(r) <= MAX_ASSIGN_RADIUS_KM
-        and _rider_active_count(db, str(r["_id"])) < MAX_CONCURRENT_ORDERS
-    ]
+    # No eligible riders found even at the wider fallback radius.
+    any_nearby = bool(all_online)  # at least someone is online, even if all rejected/busy/too far
 
     if not any_nearby:
         db.orders.update_one(

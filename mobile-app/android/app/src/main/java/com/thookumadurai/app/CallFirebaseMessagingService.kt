@@ -32,7 +32,7 @@ import android.util.Log
  *     "restaurantName": "...",
  *     "total": "123",
  *     "distanceKm": "2.4",
- *     "farDelivery": "0" | "1"
+ *     "farOffer": "0" | "1"
  *   }
  */
 class CallFirebaseMessagingService : FirebaseMessagingService() {
@@ -64,7 +64,7 @@ class CallFirebaseMessagingService : FirebaseMessagingService() {
         val orderId = data["orderId"] ?: return
         val restaurantName = data["restaurantName"] ?: "Restaurant"
         val distance = data["distanceKm"].orEmpty()
-        val far = data["farDelivery"] == "1"
+        val far = data["farOffer"] == "1"
 
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

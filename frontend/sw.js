@@ -15,7 +15,7 @@ self.addEventListener('push', function (event) {
   if (data.type === 'delivery_offer') {
     const tag = 'thooku-offer-' + data.order_id;
     const dist = data.distance_km ? ' · ' + data.distance_km + ' km away' : '';
-    const far = data.far_delivery ? ' · Far from you (nearest available rider)' : '';
+    const far = data.far_offer ? ' · Farther than usual (no nearer rider available)' : '';
     event.waitUntil((async () => {
       const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const c of clients) {
