@@ -21,5 +21,6 @@ python-socketio==5.16.2
 google-auth==2.37.0
 google-auth-oauthlib==1.2.1
 firebase-admin==6.5.0
+boto3==1.34.144
 # apns2 — uncomment when iOS VoIP push is needed (conflicts with PyJWT v2)
 # apns2==0.7.2

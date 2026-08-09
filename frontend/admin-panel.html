@@ -307,6 +307,9 @@
     <div class="nav-item" id="nav-coupons" onclick="showTab('coupons')" title="Coupons">
       <i class="fas fa-tag"></i> <span>Coupons</span>
     </div>
+    <div class="nav-item" id="nav-recordings" onclick="showTab('recordings')" title="Call Recordings">
+      <i class="fas fa-microphone"></i> <span>Call Recordings</span>
+    </div>
     <div class="nav-item" id="nav-settings" onclick="showTab('settings')" title="Settings">
       <i class="fas fa-gear"></i> <span>Settings</span>
     </div>
@@ -497,6 +500,24 @@
       <button class="btn btn-danger" style="margin-top:10px" onclick="confirmResetDB()">
         <i class="fas fa-database"></i> Reset Database
       </button>
+    </div>
+  </div>
+
+  <!-- ── CALL RECORDINGS ── -->
+  <div class="tab-panel" id="tab-recordings">
+    <div class="settings-card">
+      <h3><i class="fas fa-microphone"></i> Call Recordings</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+        Recordings are for safety/quality review and dispute resolution only. Both parties are shown a
+        recording notice during every call. Playback links expire after 5 minutes.
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input type="text" class="form-control" id="recordingsOrderFilter" placeholder="Filter by Order ID (optional)" style="flex:1">
+        <button class="btn btn-accent" onclick="loadCallRecordings()"><i class="fas fa-search"></i> Search</button>
+      </div>
+      <div id="recordingsList">
+        <div style="text-align:center;padding:24px;color:var(--text-dim)">Loading recordings...</div>
+      </div>
     </div>
   </div>
 
@@ -847,7 +868,8 @@ let currentAssignOrderId = null;
 // ═══════════════════════════════════════
 const tabTitles = {
   dashboard: 'Dashboard', restaurants: 'Restaurants', riders: 'Riders',
-  customers: 'Customers', orders: 'Orders', coupons: 'Coupons', settings: 'Settings'
+  customers: 'Customers', orders: 'Orders', coupons: 'Coupons', settings: 'Settings',
+  recordings: 'Call Recordings'
 };
 const tabLoaders = {
   dashboard: loadDashboard,
@@ -856,7 +878,8 @@ const tabLoaders = {
   customers: loadCustomers,
   orders: loadOrders,
   coupons: loadCoupons,
-  settings: loadSettings
+  settings: loadSettings,
+  recordings: loadCallRecordings
 };
 
 function showTab(name) {
@@ -1524,6 +1547,75 @@ async function confirmResetDB() {
     setTimeout(() => loadDashboard(), 1000);
   } catch (e) {
     showToast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// CALL RECORDINGS
+// ═══════════════════════════════════════
+function fmtBytes(n) {
+  if (!n) return '0 KB';
+  return (n / 1024).toFixed(1) + ' KB';
+}
+
+async function loadCallRecordings() {
+  const listEl = document.getElementById('recordingsList');
+  listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">Loading recordings...</div>';
+  try {
+    const orderId = (document.getElementById('recordingsOrderFilter').value || '').trim();
+    const qs = orderId ? ('?order_id=' + encodeURIComponent(orderId)) : '';
+    const data = await apiFetch('/admin/call-recordings' + qs);
+    const recs = data.data || [];
+    if (!recs.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No recordings found.</div>';
+      return;
+    }
+    listEl.innerHTML = recs.map(r => {
+      const date = r.created_at ? new Date(r.created_at * 1000).toLocaleString() : '—';
+      const roleLabel = r.role === 'rider' ? '🛵 Rider' : '👤 Customer';
+      const backendBadge = r.storage_backend === 'r2'
+        ? '<span style="color:#4CAF50">● R2</span>'
+        : '<span style="color:#EF5350" title="Not persistent — will be lost on next redeploy">● Local (not persistent)</span>';
+      return `
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-weight:600">Order ${r.order_id}</div>
+              <div style="font-size:12px;color:var(--text-dim)">${roleLabel} · ${date} · ${fmtBytes(r.size_bytes)} · ${backendBadge}</div>
+            </div>
+            <button class="btn btn-accent" style="padding:6px 12px;font-size:13px" onclick="playCallRecording('${r._id}', this)">
+              <i class="fas fa-play"></i> Play
+            </button>
+          </div>
+          <div id="player-${r._id}" style="margin-top:10px;display:none"></div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--danger)">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+async function playCallRecording(recordingId, btn) {
+  const container = document.getElementById('player-' + recordingId);
+  setLoading(btn, true);
+  try {
+    // Local-disk recordings stream directly from this URL; R2 recordings
+    // redirect to a short-lived presigned URL — both work as an <audio src>.
+    const playUrl = API_BASE + '/admin/call-recordings/' + recordingId + '/play?token=' + encodeURIComponent(token);
+    const res = await fetch(playUrl);
+    const contentType = res.headers.get('content-type') || '';
+    let audioSrc = playUrl;
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Playback failed');
+      audioSrc = data.data.url;
+    }
+    container.innerHTML = `<audio controls autoplay style="width:100%" src="${audioSrc}"></audio>`;
+    container.style.display = 'block';
+  } catch (e) {
+    showToast('Playback failed: ' + e.message, 'error');
+  } finally {
+    setLoading(btn, false, '<i class="fas fa-play"></i> Play');
   }
 }
 

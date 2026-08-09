@@ -634,6 +634,7 @@ function startDemo(){
 var pc = null, callOrderId = '', callTargetName = '';
 var callTimerInterval = null, callStartTime = null, callMuted = false, callStream = null;
 var callFallbackTimer = null;
+var recorder = null, recordedChunks = [], recordingAudioCtx = null;
 var _audioCtx = null;
 
 function unlockAudio(){
@@ -795,6 +796,7 @@ function acceptCall(){
     callStream = stream;
     pc = createPeerConnection(callOrderId, function(remoteStream){
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
@@ -846,11 +848,58 @@ function stopCallTimer(){
   callStartTime = null;
 }
 
+// Records both sides of the call locally (mixed via Web Audio), at a low
+// bitrate since this is voice-only and storage should stay small. Uploaded
+// to the backend once the call ends. A recording notice is shown in the
+// call UI (see callOverlay HTML) so both parties are informed.
+function startCallRecording(localStream, remoteStream){
+  try{
+    if(!localStream || !remoteStream) return;
+    recordingAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var dest = recordingAudioCtx.createMediaStreamDestination();
+    recordingAudioCtx.createMediaStreamSource(localStream).connect(dest);
+    recordingAudioCtx.createMediaStreamSource(remoteStream).connect(dest);
+    var mimeType = 'audio/webm;codecs=opus';
+    if(!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+    recordedChunks = [];
+    recorder = new MediaRecorder(dest.stream, mimeType ? {mimeType: mimeType, audioBitsPerSecond: 16000} : {audioBitsPerSecond: 16000});
+    recorder.ondataavailable = function(e){ if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    recorder.start(1000);
+  }catch(e){ console.warn('Call recording unavailable:', e); recorder = null; }
+}
+
+function stopAndUploadRecording(orderId){
+  if(!recorder){ return; }
+  var r = recorder, oid = orderId;
+  recorder = null;
+  try{
+    r.onstop = function(){
+      try{
+        if(recordingAudioCtx){ recordingAudioCtx.close(); recordingAudioCtx = null; }
+        if(!recordedChunks.length || !oid) return;
+        var blob = new Blob(recordedChunks, {type: r.mimeType || 'audio/webm'});
+        recordedChunks = [];
+        var fd = new FormData();
+        fd.append('order_id', oid);
+        fd.append('role', 'customer');
+        fd.append('audio', blob, 'call_' + oid + '_' + Date.now() + '.webm');
+        fetch(API + '/calls/recording', {
+          method: 'POST',
+          headers: {'Authorization': HDR.Authorization},
+          body: fd
+        }).catch(function(){});
+      }catch(e){ console.warn('Recording upload failed:', e); }
+    };
+    r.stop();
+  }catch(e){}
+}
+
 async function endCall(){
   hideIncomingCallScreen();
   if(callFallbackTimer){ clearTimeout(callFallbackTimer); callFallbackTimer = null; }
   if(pc){ pc.close(); pc = null; }
   if(callStream){ callStream.getTracks().forEach(function(t){ t.stop(); }); callStream = null; }
+  stopAndUploadRecording(callOrderId);
   stopCallTimer();
   hideCallOverlay();
   if(callOrderId && socket){ socket.emit('call_end',{order_id:callOrderId}); }
@@ -878,6 +927,7 @@ function callRider(){
     pc = createPeerConnection(ORDER_ID, function(remoteStream){
       if(callFallbackTimer){ clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t){ pc.addTrack(t,stream); });
@@ -1000,6 +1050,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <div style="width:110px;height:110px;border-radius:50%;background:#2E8B57;display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:700" id="callOverlayInitial">R</div>
     <div style="font-size:22px;font-weight:700" id="callOverlayName">Call</div>
     <div style="font-size:15px;color:#9fc9a8" id="callOverlayStatus">Ringing...</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:6px">🔴 This call may be recorded for safety &amp; quality</div>
   </div>
   <div style="display:flex;gap:28px;align-items:center">
     <button onclick="toggleMute()" id="callMuteBtn" style="background:rgba(255,255,255,.14);border:none;border-radius:50%;width:56px;height:56px;cursor:pointer;font-size:22px;color:#fff" title="Mute">🔊</button>

@@ -216,6 +216,7 @@ from api.v1.coupons     import coupons_bp
 from api.v1.settings    import settings_bp
 from api.v1.push_notifications import push_bp, init_push_indexes
 from api.v1.push_calls import push_calls_bp
+from api.v1.call_recordings import call_recordings_bp
 
 app.register_blueprint(auth_bp,        url_prefix='/api/v1/auth')
 app.register_blueprint(customers_bp,   url_prefix='/api/v1/customers')
@@ -230,6 +231,7 @@ app.register_blueprint(coupons_bp,     url_prefix='/api/v1/coupons')
 app.register_blueprint(settings_bp,    url_prefix='/api/v1/settings')
 app.register_blueprint(push_bp)
 app.register_blueprint(push_calls_bp, url_prefix='/api/v1/push')
+app.register_blueprint(call_recordings_bp, url_prefix='/api/v1/calls')
 
 register_socketio_handlers(socketio)
 

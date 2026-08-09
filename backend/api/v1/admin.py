@@ -771,3 +771,81 @@ def keep_only_restaurant():
         },
     }), 200
 
+
+# ─────────────────────────────────────────────────────────────
+# Call recordings (admin browse/play)
+# ─────────────────────────────────────────────────────────────
+
+@admin_bp.route("/call-recordings", methods=["GET"])
+def list_all_call_recordings():
+    payload, err = _require_superadmin()
+    if err:
+        return err
+
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    order_id = request.args.get("order_id", "").strip()
+    limit = min(int(request.args.get("limit", 50)), 200)
+
+    query = {"order_id": order_id} if order_id else {}
+    docs = list(
+        db.call_recordings.find(query, {"storage_ref": 0})
+        .sort("created_at", -1)
+        .limit(limit)
+    )
+    for d in docs:
+        d["_id"] = str(d["_id"])
+    return jsonify({"success": True, "data": docs}), 200
+
+
+@admin_bp.route("/call-recordings/<recording_id>/play", methods=["GET"])
+def play_call_recording(recording_id):
+    # Support token via query string too, since <audio src> can't send an
+    # Authorization header — the admin panel passes ?token=<jwt> instead.
+    token = request.args.get("token", "")
+    if token:
+        try:
+            jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        except Exception:
+            return jsonify({"success": False, "message": "Invalid or expired token"}), 401
+    else:
+        payload, err = _require_superadmin()
+        if err:
+            return err
+
+    db = get_db()
+    if db is None:
+        return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    try:
+        doc = db.call_recordings.find_one({"_id": ObjectId(recording_id)})
+    except Exception:
+        return jsonify({"success": False, "message": "Invalid recording id"}), 400
+    if doc is None:
+        return jsonify({"success": False, "message": "Recording not found"}), 404
+
+    if doc["storage_backend"] == "r2":
+        try:
+            from api.v1.call_recordings import _r2_client
+            client = _r2_client()
+            if client is None:
+                return jsonify({"success": False, "message": "R2 not configured"}), 503
+            bucket, key = doc["storage_ref"].split("/", 1)
+            url = client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=300,  # link valid 5 minutes — recordings aren't meant to be shared widely
+            )
+            return jsonify({"success": True, "data": {"url": url}}), 200
+        except Exception as e:
+            return jsonify({"success": False, "message": f"Could not generate playback URL: {e}"}), 500
+    else:
+        # Local disk — stream the file directly.
+        from flask import send_file
+        path = doc["storage_ref"]
+        if not os.path.isfile(path):
+            return jsonify({"success": False, "message": "Recording file missing on disk (likely wiped by a redeploy — set up R2 to avoid this)"}), 404
+        return send_file(path, mimetype="audio/webm")
+

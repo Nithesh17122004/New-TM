@@ -851,6 +851,7 @@ let callStartTime = null;
 let callMuted = false;
 let callStream = null;
 let callFallbackTimer = null;
+let recorder = null, recordedChunks = [], recordingAudioCtx = null;
 let _audioCtx = null;
 let _ringtoneInterval = null;
 let _ringStopTimer = null;
@@ -1016,11 +1017,58 @@ function stopCallTimer() {
   callStartTime = null;
 }
 
+// Records both sides of the call locally (mixed via Web Audio), at a low
+// bitrate since this is voice-only and storage should stay small. Uploaded
+// to the backend once the call ends. A recording notice is shown in the
+// call UI (see callOverlay HTML) so both parties are informed.
+function startCallRecording(localStream, remoteStream) {
+  try {
+    if (!localStream || !remoteStream) return;
+    recordingAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = recordingAudioCtx.createMediaStreamDestination();
+    recordingAudioCtx.createMediaStreamSource(localStream).connect(dest);
+    recordingAudioCtx.createMediaStreamSource(remoteStream).connect(dest);
+    let mimeType = 'audio/webm;codecs=opus';
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+    recordedChunks = [];
+    recorder = new MediaRecorder(dest.stream, mimeType ? {mimeType, audioBitsPerSecond: 16000} : {audioBitsPerSecond: 16000});
+    recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    recorder.start(1000);
+  } catch (e) { console.warn('Call recording unavailable:', e); recorder = null; }
+}
+
+function stopAndUploadRecording(orderId) {
+  if (!recorder) return;
+  const r = recorder, oid = orderId;
+  recorder = null;
+  try {
+    r.onstop = function() {
+      try {
+        if (recordingAudioCtx) { recordingAudioCtx.close(); recordingAudioCtx = null; }
+        if (!recordedChunks.length || !oid) return;
+        const blob = new Blob(recordedChunks, {type: r.mimeType || 'audio/webm'});
+        recordedChunks = [];
+        const fd = new FormData();
+        fd.append('order_id', oid);
+        fd.append('role', 'rider');
+        fd.append('audio', blob, 'call_' + oid + '_' + Date.now() + '.webm');
+        fetch(API_BASE + '/calls/recording', {
+          method: 'POST',
+          headers: { 'Authorization': HEADERS.Authorization },
+          body: fd
+        }).catch(function() {});
+      } catch (e) { console.warn('Recording upload failed:', e); }
+    };
+    r.stop();
+  } catch (e) {}
+}
+
 async function endCall() {
   stopRingtone();
   if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
   if (pc) { pc.close(); pc = null; }
   if (callStream) { callStream.getTracks().forEach(function(t) { t.stop(); }); callStream = null; }
+  stopAndUploadRecording(callOrderId);
   stopCallTimer();
   hideCallOverlay();
   hideIncomingCall();
@@ -1045,6 +1093,7 @@ async function answerCall() {
     pc = createPeerConnection(callOrderId, function(remoteStream) {
       if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t) { pc.addTrack(t, stream); });
@@ -1080,6 +1129,7 @@ async function callCustomer(orderId) {
     pc = createPeerConnection(orderId, function(remoteStream) {
       if (callFallbackTimer) { clearTimeout(callFallbackTimer); callFallbackTimer = null; }
       playRemoteStream(remoteStream);
+      startCallRecording(stream, remoteStream);
       startCallTimer();
     });
     stream.getTracks().forEach(function(t) { pc.addTrack(t, stream); });
@@ -1437,6 +1487,7 @@ function showToast(msg, type='success') {
     <div style="flex:1;min-width:0">
       <div style="font-weight:700;font-size:14px" id="callOverlayName">Call</div>
       <div style="font-size:12px;color:var(--dim)" id="callOverlayStatus">00:00</div>
+      <div style="font-size:10px;color:var(--dim);opacity:.7">🔴 Recorded for safety &amp; quality</div>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="toggleMute()" id="callMuteBtn" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:18px;color:#ccc" title="Mute">🔇</button>
