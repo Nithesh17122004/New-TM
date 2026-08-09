@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inc) { inc.style.display = 'block'; }
         var act = document.getElementById('activeCard');
         if (act) { act.style.display = 'none'; }
-        showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.', 'warning');
+        showToast('📦 New delivery offer! You have ' + (data.offer_timeout || 120) + 's to accept.' + (data.far_delivery ? ' (Far from you — nearest available rider)' : ''), 'warning');
         startAcceptCountdown(data.offer_timeout || 120);
         playRingtone();
         if (_ringStopTimer) clearTimeout(_ringStopTimer);

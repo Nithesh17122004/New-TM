@@ -891,6 +891,15 @@ function showTab(name) {
   if (tabLoaders[name]) tabLoaders[name]();
 }
 
+// Live-refresh open tabs so new orders / status changes appear without
+// switching away and back. Orders are re-polled every 12s while visible.
+setInterval(() => {
+  const ordersTab = document.getElementById('tab-orders');
+  if (ordersTab && ordersTab.classList.contains('active')) {
+    loadOrders().then(filterOrders);
+  }
+}, 12000);
+
 // ═══════════════════════════════════════
 // API HELPERS
 // ═══════════════════════════════════════
@@ -1325,7 +1334,7 @@ function renderOrders(list) {
         <td>${escHtml(o.rider_name || o.rider?.name || (unassigned ? '—' : '—'))}</td>
         <td style="font-weight:700;color:var(--accent)">₹${o.total_amount || o.amount || 0}</td>
         <td><span class="badge ${statusCls}">${(o.status||'').replace(/_/g,' ')}</span></td>
-        <td style="font-size:12px;color:var(--text-muted)">${o.created_at ? new Date(o.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${o.created_at ? new Date(o.created_at < 1e12 ? o.created_at * 1000 : o.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
         <td style="display:flex;gap:6px">
           ${unassigned ? `<button class="btn btn-outline btn-sm" onclick="openAssignRider('${o._id||o.order_id}')"><i class="fas fa-motorcycle"></i> Assign</button>` : ''}
         </td>
