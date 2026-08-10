@@ -2427,14 +2427,44 @@ function renderOrderList(orders) {
     var status = o.status || 'pending';
     var time = fmtDate(o.created_at);
     var items = (o.items||[]).map(function(i){return esc(i.name)+' ×'+i.qty;}).join(', ');
-    var trackBtn = status !== 'cancelled' && status !== 'delivered'
-      ? '<button class="btn-sm" style="background:var(--accent);color:#fff" onclick="openOrderTracking(\''+oid+'\')">Track</button>'
-      : '<button class="btn-sm" style="background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.3)" onclick="reorder(\''+oid+'\',\''+esc(o.restaurant_id||'')+'\')">Reorder</button>';
+    var actions = '';
+    if (status === 'pending') {
+      // Cancel is only available before the restaurant accepts the order —
+      // matches the backend rule exactly, and disappears the moment the
+      // order moves past 'pending' (accepted/preparing/etc).
+      actions = '<button class="btn-sm" style="background:var(--accent);color:#fff" onclick="openOrderTracking(\''+oid+'\')">Track</button>'+
+        '<button class="btn-sm" id="cancelBtn-'+oid+'" style="background:rgba(239,83,80,.1);color:#ef5350;border:1px solid rgba(239,83,80,.4)" onclick="cancelOrderFromList(\''+oid+'\')">Cancel</button>';
+    } else if (status !== 'cancelled' && status !== 'delivered') {
+      actions = '<button class="btn-sm" style="background:var(--accent);color:#fff" onclick="openOrderTracking(\''+oid+'\')">Track</button>';
+    } else {
+      actions = '<button class="btn-sm" style="background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.3)" onclick="reorder(\''+oid+'\',\''+esc(o.restaurant_id||'')+'\')">Reorder</button>';
+    }
     return '<div class="order-card-h">'+
       '<div class="order-hd"><span class="oid">'+oid+'</span><span class="rest-name">🏪 '+rest+'</span><span class="date">'+time+'</span></div>'+
       '<div class="order-items-h">'+items+'</div>'+
-      '<div class="order-ft-h">'+statusChip(status)+'<span class="amount">₹'+total+'</span><span style="flex:1"></span>'+trackBtn+'</div></div>';
+      '<div class="order-ft-h">'+statusChip(status)+'<span class="amount">₹'+total+'</span><span style="flex:1"></span>'+actions+'</div></div>';
   }).join('');
+}
+
+async function cancelOrderFromList(oid) {
+  if (!confirm('Cancel this order? If you already paid, your money is refunded automatically.')) return;
+  var btn = document.getElementById('cancelBtn-' + oid);
+  if (btn) { btn.disabled = true; btn.textContent = 'Cancelling...'; }
+  try {
+    var headers = state.user?.token ? { 'Authorization': 'Bearer ' + state.user.token } : {};
+    var res = await fetch(API_BASE + '/orders/' + oid + '/cancel', { method: 'PATCH', headers: headers });
+    var d = await res.json();
+    if (d.success) {
+      showToast(d.message + (d.refunded ? ' — Refund processed!' : ' — No charge taken.'), 'success');
+      loadOrderHistory(); // refresh so the Cancel button disappears and status updates
+    } else {
+      showToast(d.message || 'Could not cancel order — it may have just been accepted', 'error');
+      loadOrderHistory(); // refresh anyway in case status changed underneath us
+    }
+  } catch (e) {
+    showToast('Could not cancel order', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+  }
 }
 
 function openOrderTracking(oid) {

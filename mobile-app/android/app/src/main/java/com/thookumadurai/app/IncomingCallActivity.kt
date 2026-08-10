@@ -113,6 +113,12 @@ class IncomingCallActivity : AppCompatActivity() {
         val callerRole = intent.getStringExtra(EXTRA_CALLER_ROLE) ?: ""
 
         findViewById<TextView>(R.id.callerName).text = callerName
+        findViewById<TextView>(R.id.callerAvatar).text =
+            callerName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+        findViewById<TextView>(R.id.callerSubtitle).text =
+            if (callerRole == "rider") "Delivery Partner · Thooku Madurai"
+            else if (callerRole == "customer") "Customer · Thooku Madurai"
+            else "Thooku Madurai"
 
         startRinging()
 

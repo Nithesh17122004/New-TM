@@ -3,54 +3,116 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
+    android:gravity="center_horizontal"
     android:background="#0f2016"
-    android:padding="32dp">
+    android:paddingTop="72dp"
+    android:paddingBottom="56dp"
+    android:paddingStart="32dp"
+    android:paddingEnd="32dp">
+
+    <TextView
+        android:id="@+id/incomingLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Incoming call..."
+        android:textColor="#A5D6A7"
+        android:textSize="16sp"
+        android:letterSpacing="0.05" />
+
+    <TextView
+        android:id="@+id/callerAvatar"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="36dp"
+        android:background="@drawable/circle_avatar_bg"
+        android:gravity="center"
+        android:text="?"
+        android:textColor="#FFFFFF"
+        android:textSize="48sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/callerName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:text="Incoming Call"
         android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:gravity="center" />
 
     <TextView
         android:id="@+id/callerSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="Thooku Madurai"
-        android:textColor="#A5D6A7"
-        android:textSize="15sp" />
+        android:textColor="#7fA893"
+        android:textSize="14sp" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="80dp"
         android:orientation="horizontal"
         android:gravity="center"
         android:weightSum="2">
 
-        <Button
-            android:id="@+id/declineBtn"
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="12dp"
-            android:backgroundTint="#EF5350"
-            android:text="Decline"
-            android:textColor="#FFFFFF" />
+            android:orientation="vertical"
+            android:gravity="center">
 
-        <Button
-            android:id="@+id/answerBtn"
+            <Button
+                android:id="@+id/declineBtn"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/circle_decline_btn"
+                android:text="✕"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:elevation="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Decline"
+                android:textColor="#EF9A9A"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="12dp"
-            android:backgroundTint="#4CAF50"
-            android:text="Answer"
-            android:textColor="#FFFFFF" />
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/answerBtn"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/circle_answer_btn"
+                android:text="📞"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:elevation="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Answer"
+                android:textColor="#A5D6A7"
+                android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
