@@ -22,7 +22,7 @@ from flask import Blueprint, current_app, jsonify, request
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "thooku-madurai-secret-key-2026")
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 JWT_EXPIRY = 86400 * 7  # 7 days
 
 

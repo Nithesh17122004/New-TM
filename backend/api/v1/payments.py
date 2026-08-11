@@ -20,7 +20,7 @@ payments_bp = Blueprint("payments", __name__)
 logger = logging.getLogger(__name__)
 
 # Reuse the app-level require_auth from app.py (imported at blueprint registration)
-JWT_SECRET = os.environ.get("JWT_SECRET", "thooku-madurai-secret-key-2026")
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 INSTAMOJO_API_KEY = os.environ.get("INSTAMOJO_API_KEY", "")
 INSTAMOJO_AUTH_TOKEN = os.environ.get("INSTAMOJO_AUTH_TOKEN", "")
 INSTAMOJO_AUTH_TOKEN = os.environ.get("INSTAMOJO_AUTH_TOKEN", "")

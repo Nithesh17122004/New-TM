@@ -476,7 +476,7 @@ async function cancelOrder(){
 
 function initSocket(){
   try{
-    socket=io(WS,{transports:['websocket','polling'],timeout:5000});
+    socket=io(WS,{transports:['websocket','polling'],timeout:5000,auth:{token:token}});
     socket.on('connect',function(){
       if(ORDER_ID) socket.emit('join_order',{order_id:ORDER_ID});
     });

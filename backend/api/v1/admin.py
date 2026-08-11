@@ -23,9 +23,7 @@ from services.platform_settings import get_platform_settings
 admin_bp = Blueprint("admin", __name__)
 logger = logging.getLogger(__name__)
 
-JWT_SECRET = os.environ.get(
-    "JWT_SECRET", "thooku-madurai-secret-key-2026"
-)
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 IS_PRODUCTION = os.environ.get("FLASK_ENV", "development") == "production"
 
 # ---------------------------------------------------------------------------

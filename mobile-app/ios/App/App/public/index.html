@@ -1981,7 +1981,7 @@ async function startOrderTracking(orderId) {
   // Connect Socket.IO
   try {
     if (_trackSocket) _trackSocket.disconnect();
-    _trackSocket = io('https://new-tm-knk1.onrender.com', { transports: ['websocket','polling'] });
+    _trackSocket = io('https://new-tm-knk1.onrender.com', { transports: ['websocket','polling'], auth: { token: state.user?.token || '' } });
     _trackSocket.on('connect', () => _trackSocket.emit('join_order', { order_id: orderId }));
     _trackSocket.on('location_update', (data) => moveRiderMarker(data.lat, data.lng, data.heading));
     attachCallSocketHandlers(_trackSocket);

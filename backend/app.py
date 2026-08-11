@@ -37,16 +37,38 @@ if os.environ.get('FIREBASE_SERVICE_ACCOUNT_B64') and not os.environ.get('FIREBA
 
 # ── App setup ─────────────────────────────────────────────────────────────
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'tm-ws-secret-2026')
-app.config['CORS_ORIGINS'] = '*'
+
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. Refusing to start with "
+        "a guessable default — set SECRET_KEY in your environment before deploying."
+    )
+app.config['SECRET_KEY'] = SECRET_KEY
+
+# CORS: restrict to known frontend origins instead of '*'. Configurable via
+# CORS_ALLOWED_ORIGINS (comma-separated) so you can add/remove domains without
+# a code change. Defaults cover the production domain, the Render backend
+# (in case the web frontend is ever served directly from it), and the
+# Capacitor native-app WebView origins (Android/iOS use these local schemes,
+# not a real domain).
+_default_origins = (
+    "https://thookumadurai.in,https://www.thookumadurai.in,"
+    "https://new-tm-knk1.onrender.com,"
+    "capacitor://localhost,http://localhost,ionic://localhost"
+)
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()
+]
+app.config['CORS_ORIGINS'] = CORS_ALLOWED_ORIGINS
 app.config['CORS_SUPPORTS_CREDENTIALS'] = True
 app.config['CORS_ALLOW_HEADERS'] = ['Content-Type', 'Authorization', 'X-Requested-With']
 app.config['CORS_METHODS'] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": CORS_ALLOWED_ORIGINS}})
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins='*',
+    cors_allowed_origins=CORS_ALLOWED_ORIGINS,
     async_mode='eventlet',
     logger=False,
     engineio_logger=False,
@@ -59,7 +81,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-JWT_SECRET    = os.environ.get('JWT_SECRET', 'thooku-madurai-secret-key-2026')
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 JWT_ALGORITHM = 'HS256'
 
 # ── Database ───────────────────────────────────────────────────────────────

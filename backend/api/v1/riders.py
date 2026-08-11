@@ -11,7 +11,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 riders_bp = Blueprint("riders", __name__)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "thooku-madurai-secret-key-2026")
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 MAX_CONCURRENT_ORDERS = 3
 MAX_ASSIGN_RADIUS_KM = 5.0  # only show/assign orders within 5 km of rider
 

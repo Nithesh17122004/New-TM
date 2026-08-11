@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Socket.IO for real-time updates
   try {
-    socket = io('https://new-tm-knk1.onrender.com', { transports: ['websocket', 'polling'], timeout: 5000 });
+    socket = io('https://new-tm-knk1.onrender.com', { transports: ['websocket', 'polling'], timeout: 5000, auth: { token: token } });
     socket.on('connect', () => {
       if (RIDER_ID) {
         socket.emit('join_rider', { rider_id: RIDER_ID });

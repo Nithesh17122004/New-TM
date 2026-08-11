@@ -16,8 +16,8 @@ def _db():      return current_app.extensions.get('mongo_db')
 
 
 def _require_auth(f):
-    import functools, os, jwt as _jwt
-    SECRET = os.environ.get('JWT_SECRET', 'thooku-madurai-secret-key-2026')
+    import functools, jwt as _jwt
+    from services.jwt_config import JWT_SECRET as SECRET
     @functools.wraps(f)
     def inner(*a, **kw):
         hdr = request.headers.get('Authorization', '')
@@ -237,6 +237,46 @@ def reverse_geocode():
 # ── Socket.IO handlers (registered from app.py) ────────────────────────────
 
 def register_socketio_handlers(socketio):
+    # In-memory map of request.sid -> authenticated identity, populated on
+    # connect. Call signaling events (below) use this to verify the sender
+    # is actually the customer or rider on the order they're calling about —
+    # without this, anyone who knew/guessed an order_id could place or
+    # interfere with a call for someone else's order.
+    _socket_identity = {}
+
+    def _decode_identity(token):
+        if not token:
+            return None
+        try:
+            import jwt as _jwt
+            from services.jwt_config import JWT_SECRET
+            payload = _jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            return {
+                'user_id': str(payload.get('user_id', '')),
+                'role': payload.get('role', ''),
+                'phone': payload.get('phone', ''),
+            }
+        except Exception:
+            return None
+
+    def _verify_call_participant(order_id):
+        """True only if the currently-connected socket's authenticated user
+        is the customer or the assigned rider on this specific order."""
+        identity = _socket_identity.get(request.sid)
+        if not identity or not order_id:
+            return False
+        db = current_app.extensions.get("mongo_db")
+        if db is None:
+            return False
+        order = db.orders.find_one({'_id': order_id}, {'customer_phone': 1, 'rider_id': 1})
+        if order is None:
+            return False
+        if identity['role'] == 'customer' and identity['phone'] and identity['phone'] == order.get('customer_phone'):
+            return True
+        if identity['role'] == 'rider' and identity['user_id'] and identity['user_id'] == str(order.get('rider_id', '')):
+            return True
+        return False
+
     @socketio.on('join_order')
     def on_join(data):
         from flask_socketio import join_room
@@ -270,14 +310,23 @@ def register_socketio_handlers(socketio):
         leave_room('riders')
 
     @socketio.on('connect')
-    def on_connect():
-        pass
+    def on_connect(auth):
+        identity = _decode_identity((auth or {}).get('token', ''))
+        if identity:
+            _socket_identity[request.sid] = identity
+
+    @socketio.on('disconnect')
+    def on_disconnect():
+        _socket_identity.pop(request.sid, None)
 
     # ── WebRTC Call Signaling (relay only) ──────────────────────────────
 
     @socketio.on('call_offer')
     def on_call_offer(data):
         oid = data.get('order_id', '')
+        if not _verify_call_participant(oid):
+            logger.warning("Rejected call_offer: sid %s not a verified participant of order %s", request.sid, oid)
+            return
         if oid:
             socketio.emit('call_offer', data, room=f'order_{oid}', include_self=False)
         # Also relay to rider room if available
@@ -329,6 +378,9 @@ def register_socketio_handlers(socketio):
 
     def _relay_to_order_and_rider(event, data):
         oid = data.get('order_id', '')
+        if not _verify_call_participant(oid):
+            logger.warning("Rejected %s: sid %s not a verified participant of order %s", event, request.sid, oid)
+            return
         if oid:
             socketio.emit(event, data, room=f'order_{oid}', include_self=False)
             db = current_app.extensions.get("mongo_db")

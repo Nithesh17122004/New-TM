@@ -25,7 +25,7 @@ from services.platform_settings import get_platform_settings
 orders_bp = Blueprint("orders", __name__)
 logger = logging.getLogger(__name__)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "thooku-madurai-secret-key-2026")
+from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 NO_RIDER_REFUND_TIMEOUT = 1800  # 30 min in seconds
 
 # Mandatory closing window (IST): 11:30 PM – 7:30 AM — all restaurants closed
