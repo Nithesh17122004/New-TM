@@ -41,6 +41,12 @@
 
   function registerDeviceToken() {
     if (!getAuth().token) return; // not logged in yet on this page load
+    // Keep the native layer authenticated (used by the native decline button
+    // when the app is closed — POST /api/v1/push/call-declined requires a
+    // participant token).
+    if (ThookuCalls.setAuthToken) {
+      ThookuCalls.setAuthToken({ token: getAuth().token }).catch(function () {});
+    }
     var getToken = platform === 'ios' ? ThookuCalls.getVoipToken : ThookuCalls.getFcmToken;
     if (!getToken) return;
     getToken().then(function (res) {

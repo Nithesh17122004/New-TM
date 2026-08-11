@@ -93,6 +93,23 @@ class CallPlugin : Plugin() {
         call.resolve()
     }
 
+    /**
+     * Stores the user's app JWT so the native incoming-call screen can send
+     * an authenticated POST /api/v1/push/call-declined when the user taps
+     * Decline (that endpoint now rejects unauthenticated requests).
+     * The WebView calls this after login / on page load with the token.
+     */
+    @PluginMethod
+    fun setAuthToken(call: PluginCall) {
+        val token = call.getString("token") ?: ""
+        if (token.isBlank()) {
+            call.resolve()
+            return
+        }
+        TokenStore.saveAuth(context, token)
+        call.resolve()
+    }
+
     /** Called by MainActivity when the app was opened from the native Answer button. */
     fun notifyIncomingCallAnswered(callId: String, orderId: String, callerName: String, callerRole: String) {
         val data = JSObject()

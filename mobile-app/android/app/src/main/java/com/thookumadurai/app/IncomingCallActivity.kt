@@ -191,6 +191,14 @@ class IncomingCallActivity : AppCompatActivity() {
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
+                // The backend requires the caller to be a participant of this
+                // order — send the app JWT the WebView stored via
+                // CallPlugin.setAuthToken (falls back to anonymous, which the
+                // backend rejects; the call still ends on the caller side).
+                val authToken = TokenStore.readAuth(applicationContext)
+                if (!authToken.isNullOrBlank()) {
+                    conn.setRequestProperty("Authorization", "Bearer $authToken")
+                }
                 conn.doOutput = true
                 val body = """{"callId":"$callId","orderId":"$orderId"}"""
                 conn.outputStream.write(body.toByteArray())

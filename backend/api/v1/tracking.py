@@ -104,7 +104,6 @@ def get_rider_loc(rider_id):
             except Exception:
                 pass
     return None
-    return None
 
 
 # ── Tracking endpoints ─────────────────────────────────────────────────────
@@ -175,6 +174,13 @@ def get_rider_location(rider_id):
 @_require_auth
 def push_rider_location(rider_id):
     """Called every 4 s from rider app — stores in Redis + emits Socket.IO."""
+    # Only the rider themself may report their own location, otherwise any
+    # authenticated user could spoof a rider's GPS.
+    user = getattr(request, 'user', {}) or {}
+    caller_rider_id = str(user.get('rider_id') or user.get('user_id') or '')
+    if user.get('role') != 'rider' or caller_rider_id != str(rider_id):
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
     data = request.get_json(silent=True) or {}
     lat, lng = data.get('lat'), data.get('lng')
     if lat is None or lng is None:

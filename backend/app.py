@@ -208,6 +208,10 @@ def set_security_headers(response):
     response.headers['X-Frame-Options']          = 'DENY'
     response.headers['X-XSS-Protection']         = '1; mode=block'
     response.headers['Referrer-Policy']           = 'strict-origin-when-cross-origin'
+    # HSTS only on HTTPS responses (Render terminates TLS) — force browsers to
+    # the secure scheme for the next year.
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
 # ── Health ─────────────────────────────────────────────────────────────────

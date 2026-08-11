@@ -250,8 +250,13 @@ def admin_login():
                     "user": {"id": admin_id, "name": admin.get("name", email),
                              "email": email, "role": "superadmin"}}), 200
 
-    # Fallback default admin (when DB unavailable or no admin found)
-    if email == "admin@thooku.com" and password == "admin123":
+    # Fallback admin — ONLY active when explicitly configured via environment
+    # variables. No credentials are hardcoded in source: this path exists so
+    # you can recover access if the 'admins' collection is unreachable, but
+    # the credentials come from the deployment environment, never from code.
+    fb_email = os.environ.get("FALLBACK_ADMIN_EMAIL", "").strip().lower()
+    fb_pass = os.environ.get("FALLBACK_ADMIN_PASSWORD", "")
+    if fb_email and fb_pass and email == fb_email and password == fb_pass:
         token = _make_token({
             "user_id": "default_admin", "role": "superadmin",
             "name": "Super Admin", "email": email,

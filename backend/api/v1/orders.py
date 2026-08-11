@@ -605,13 +605,29 @@ def stream_order(order_id):
 
 @orders_bp.route("/my-orders", methods=["GET"])
 def my_orders():
-    phone = request.args.get("phone", "").strip()
-    if not phone:
-        return jsonify({"success": False, "message": "Phone number is required"}), 400
+    # Authenticated: the phone number comes from the JWT, never from a query
+    # param — otherwise anyone could enumerate another customer's order history.
+    hdr = request.headers.get("Authorization", "")
+    if not hdr.startswith("Bearer "):
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    try:
+        payload = jwt.decode(hdr.split(" ", 1)[1], JWT_SECRET, algorithms=["HS256"])
+    except jwt.InvalidTokenError:
+        return jsonify({"success": False, "message": "Invalid token"}), 401
+
+    phone = str(payload.get("phone", "")).strip()
 
     db = get_db()
     if db is None:
         return jsonify({"success": False, "message": "Database unavailable"}), 503
+
+    # Google logins don't carry a phone claim — resolve it from the profile.
+    if not phone and payload.get("email"):
+        cust = db.customers.find_one({"email": payload.get("email")}, {"phone": 1})
+        if cust:
+            phone = str(cust.get("phone", "")).strip()
+    if not phone:
+        return jsonify({"success": False, "message": "Phone number is required"}), 400
 
     docs = list(db.orders.find({"customer_phone": phone}).sort("created_at", -1).limit(50))
     for d in docs:

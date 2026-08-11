@@ -42,6 +42,30 @@ def _auth(f):
         return f(*args, **kwargs)
     return decorated
 
+
+def _is_order_participant(user, order_id):
+    """True if the authenticated user is the customer or assigned rider on this order."""
+    if not user or not order_id:
+        return False
+    db = _get_db()
+    if db is None:
+        return False
+    order = db.orders.find_one({'_id': order_id}, {'customer_phone': 1, 'rider_id': 1})
+    if order is None:
+        return False
+    if user.get('role') == 'customer':
+        phone = user.get('phone') or ''
+        # Google logins don't carry a phone claim — resolve it from the profile.
+        if not phone and user.get('email'):
+            cust = db.customers.find_one({'email': user.get('email')}, {'phone': 1})
+            if cust:
+                phone = str(cust.get('phone', '')) or ''
+        if phone and phone == order.get('customer_phone'):
+            return True
+    if user.get('role') == 'rider' and str(user.get('rider_id') or user.get('user_id') or '') == str(order.get('rider_id', '')):
+        return True
+    return False
+
 @push_bp.route('/api/v1/push/subscribe', methods=['POST'])
 @_auth
 def subscribe():
@@ -143,6 +167,10 @@ def call_rider():
     call_id = data['callId']
     order_id = data['orderId']
     caller_name = data.get('callerName', 'Customer')
+    # Only the customer (or the assigned rider) on this order may push a call
+    # to the other side — otherwise anyone could trigger call pushes at will.
+    if not _is_order_participant(getattr(request, 'user', {}), order_id):
+        return jsonify({'error': 'Forbidden'}), 403
     db = _get_db()
     if db is None:
         return jsonify({'error': 'Database unavailable'}), 503
@@ -165,6 +193,9 @@ def call_customer():
     call_id = data['callId']
     order_id = data['orderId']
     caller_name = data.get('callerName', 'Your Rider')
+    # Only the assigned rider (or the customer) on this order may trigger it.
+    if not _is_order_participant(getattr(request, 'user', {}), order_id):
+        return jsonify({'error': 'Forbidden'}), 403
     db = _get_db()
     if db is None:
         return jsonify({'error': 'Database unavailable'}), 503
@@ -191,8 +222,13 @@ def call_customer():
     return jsonify({'status': 'push sent'})
 
 @push_bp.route('/api/v1/push/call-declined', methods=['POST'])
+@_auth
 def call_declined():
     data = request.json
+    # Only the customer or assigned rider on this order may decline/end it —
+    # otherwise anyone who guessed an order id could hang up live calls.
+    if not _is_order_participant(getattr(request, 'user', {}), data.get('orderId') or ''):
+        return jsonify({'error': 'Forbidden'}), 403
     sio = _get_socketio()
     if data.get('orderId'):
         sio.emit('call_decline', {

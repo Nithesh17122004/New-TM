@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
 INSTAMOJO_API_KEY = os.environ.get("INSTAMOJO_API_KEY", "")
 INSTAMOJO_AUTH_TOKEN = os.environ.get("INSTAMOJO_AUTH_TOKEN", "")
-INSTAMOJO_AUTH_TOKEN = os.environ.get("INSTAMOJO_AUTH_TOKEN", "")
 INSTAMOJO_SALT = os.environ.get("INSTAMOJO_SALT", "")
 INSTAMOJO_WEBHOOK_SECRET = os.environ.get("INSTAMOJO_WEBHOOK_SECRET", "")
 FLASK_ENV = os.environ.get("FLASK_ENV", "development").lower()
@@ -33,7 +32,21 @@ PAYMENT_MOCK_MODE = os.environ.get("PAYMENT_MOCK_MODE", "").lower() in ("1", "tr
 
 
 def _use_mock_mode() -> bool:
-    return True  # Always mock for development
+    """Mock payments unless explicitly configured for real mode.
+
+    - PAYMENT_MOCK_MODE=1/true/yes  -> always mock
+    - PAYMENT_MOCK_MODE=0/false/no  -> always real (fails loudly if keys missing)
+    - unset                          -> mock only while no real Instamojo
+                                        credentials are configured, so enabling
+                                        real payments is automatic once the
+                                        keys are set.
+    """
+    env_mode = os.environ.get("PAYMENT_MOCK_MODE", "").lower()
+    if env_mode in ("1", "true", "yes"):
+        return True
+    if env_mode in ("0", "false", "no"):
+        return False
+    return not (INSTAMOJO_API_KEY and INSTAMOJO_AUTH_TOKEN and INSTAMOJO_SALT)
 
 
 def get_db():
