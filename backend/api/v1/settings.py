@@ -70,7 +70,9 @@ def get_ice_config():
                 },
                 method="PUT",
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            # Hardcoded HTTPS-only Xirsys endpoint with timeout — no
+            # file:// or custom scheme is ever used here.
+            with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
                 data = json.loads(resp.read().decode())
             servers = data.get("v", {}).get("iceServers") if data.get("s") == "ok" else None
             if isinstance(servers, dict):

@@ -146,19 +146,72 @@ def _verify_instamojo_webhook(data: dict) -> bool:
 @payments_bp.route("/create-order", methods=["POST"])
 @require_auth_decorator
 def create_payment_order():
-    """Create an Instamojo payment request for the order."""
+    """Create a payment request for the order.
+
+    Follows _use_mock_mode(): a mock payment is returned only while no real
+    Instamojo credentials are configured (or PAYMENT_MOCK_MODE forces mock).
+    Once INSTAMOJO_API_KEY + INSTAMOJO_AUTH_TOKEN + INSTAMOJO_SALT are set,
+    this calls the real Instamojo API and returns the actual payment URL.
+
+    The amount is taken from the order document (never trusted from the
+    client body), so a customer cannot pay less than the billed total.
+    """
     body = request.get_json(silent=True) or {}
     order_id = body.get("order_id", "")
-    amount = body.get("amount", 0)
+    if not order_id:
+        return jsonify({"success": False, "error": "order_id required"}), 400
+
+    db = get_db()
+    order = None
+    if db is not None:
+        order = db.orders.find_one({"_id": order_id})
+        if order is None:
+            return jsonify({"success": False, "error": "Order not found"}), 404
+
+    try:
+        amount = float(order["total"]) if order else float(body.get("amount", 0) or 0)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "Invalid amount"}), 400
+    if amount <= 0:
+        return jsonify({"success": False, "error": "Invalid amount"}), 400
+
+    if _use_mock_mode():
+        return jsonify({
+            "success": True,
+            "data": {
+                "payment_request_id": f"mock_pr_{uuid.uuid4().hex[:12]}",
+                "longurl": "",
+                "shorturl": "",
+                "amount": amount,
+                "order_id": order_id,
+                "mock_mode": True,
+            },
+        }), 200
+
+    customer_phone = ""
+    customer_email = ""
+    if order:
+        customer_phone = str(order.get("customer_phone", ""))
+    if not customer_phone:
+        customer_phone = str(request.user.get("phone", "") or request.user.get("email", ""))
+    customer_email = request.user.get("email", "") or ""
+
+    payment = _create_instamojo_request(order_id, amount, customer_phone, customer_email)
+    if payment is None or not payment.get("id"):
+        return jsonify({
+            "success": False,
+            "error": "Instamojo payment request creation failed - check INSTAMOJO_API_KEY / INSTAMOJO_AUTH_TOKEN / INSTAMOJO_SALT",
+        }), 502
+
     return jsonify({
         "success": True,
         "data": {
-            "payment_request_id": f"mock_pr_{uuid.uuid4().hex[:12]}",
-            "longurl": "",
-            "shorturl": "",
-            "amount": float(amount),
+            "payment_request_id": payment["id"],
+            "longurl": payment.get("longurl", ""),
+            "shorturl": payment.get("shorturl", ""),
+            "amount": amount,
             "order_id": order_id,
-            "mock_mode": True,
+            "mock_mode": False,
         },
     }), 200
 
@@ -179,6 +232,9 @@ def verify_payment():
     is_mock = (payment_request_id or "").startswith("mock_") or data.get("mock_mode")
 
     db = get_db()
+    if db is not None and db.orders.find_one({"_id": order_id}) is None:
+        return jsonify({"success": False, "error": "Order not found"}), 404
+
     if is_mock:
         _update_order_payment(db, order_id, "paid", payment_id or f"pay_mock_{uuid.uuid4().hex[:12]}")
         return jsonify({
@@ -214,38 +270,71 @@ def verify_payment():
     return jsonify({"success": False, "error": "Payment not completed yet"}), 400
 
 
-@payments_bp.route("/webhook", methods=["POST"])
-def payment_webhook():
-    """Handle Instamojo webhook callback."""
-    data = request.form.to_dict() or request.get_json(silent=True) or {}
+def _process_payment_webhook(data: dict, db) -> tuple:
+    """Validate + apply an Instamojo webhook. Returns (http_status, body).
 
+    Guards applied in order:
+      1. Instamojo HMAC signature (salt)
+      2. unknown order -> 400, never paid
+      3. duplicate webhook / already-paid order -> idempotent 200
+      4. paid amount must match the order total -> 400 otherwise
+    """
     if not _verify_instamojo_webhook(data):
         logger.warning("Webhook signature verification failed")
-        return jsonify({"status": "error", "message": "Invalid signature"}), 400
+        return 400, {"status": "error", "message": "Invalid signature"}
 
     status = data.get("status", "")
     payment_id = data.get("payment_id", "")
-    payment_request_id = data.get("payment_request_id", "")
     purpose = data.get("purpose", "")
 
     # Extract order_id from purpose field: "Thooku Madurai Order TM-XXXXXX"
     order_id = ""
     if "Order " in purpose:
         order_id = purpose.split("Order ")[-1].strip()
-
     if not order_id:
         order_id = data.get("order_id", "")
 
-    db = get_db()
+    if status != "Credit" or not order_id:
+        if order_id:
+            _update_order_payment(db, order_id, "failed")
+        return 200, {"status": "ok"}
 
-    if status == "Credit" and order_id:
-        _update_order_payment(db, order_id, "paid", payment_id)
-        logger.info("Payment webhook: order %s paid (payment %s)", order_id, payment_id)
-    elif order_id:
-        _update_order_payment(db, order_id, "failed")
-        logger.info("Payment webhook: order %s failed", order_id)
+    if db is None:
+        # Nothing to verify against — acknowledge so Instamojo stops retrying.
+        return 200, {"status": "ok"}
 
-    return jsonify({"status": "ok"}), 200
+    order = db.orders.find_one({"_id": order_id})
+    if order is None:
+        logger.warning("Webhook for unknown order %s", order_id)
+        return 400, {"status": "error", "message": "Unknown order"}
+
+    # Duplicate / already processed — idempotent, never double-process.
+    if order.get("payment_status") in ("paid", "completed"):
+        return 200, {"status": "ok"}
+
+    try:
+        paid_amount = float(data.get("amount", 0) or 0)
+        order_total = float(order.get("total", 0) or 0)
+    except (TypeError, ValueError):
+        paid_amount = order_total = 0.0
+    if abs(paid_amount - order_total) > 0.01:
+        logger.error(
+            "Webhook amount mismatch for order %s (paid %.2f, expected %.2f)",
+            order_id, paid_amount, order_total,
+        )
+        return 400, {"status": "error", "message": "Amount mismatch"}
+
+    _update_order_payment(db, order_id, "paid", payment_id)
+    logger.info("Payment webhook: order %s paid (payment %s)", order_id, payment_id)
+    return 200, {"status": "ok"}
+
+
+@payments_bp.route("/webhook", methods=["POST"])
+def payment_webhook():
+    """Handle Instamojo webhook callback (signature-verified)."""
+    data = request.form.to_dict() or request.get_json(silent=True) or {}
+    code, body = _process_payment_webhook(data, get_db())
+    return jsonify(body), code
 
 
 @payments_bp.route("/refund", methods=["POST"])

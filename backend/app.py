@@ -1,8 +1,8 @@
-import eventlet
+﻿import eventlet
 eventlet.monkey_patch()
 
 # ============================================================
-# THOOKU MADURAI — FLASK BACKEND
+# THOOKU MADURAI â€” FLASK BACKEND
 # REST API + WebSocket (Socket.IO) + Redis live tracking
 # + Auto-refund scheduler
 # ============================================================
@@ -12,7 +12,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO
 import jwt, bcrypt, os, logging
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 
 try:
@@ -21,28 +21,30 @@ try:
 except ImportError:
     pass
 
-# ── Native call-wake push (Firebase service account) ───────────────────────
+# â”€â”€ Native call-wake push (Firebase service account) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Render's free tier has no Secret Files support, so the key is stored as a
 # base64 env var and written to disk here at startup. See
 # backend-patch/README.md (native call-wake wrapper) for how this is set.
 import base64
 if os.environ.get('FIREBASE_SERVICE_ACCOUNT_B64') and not os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH'):
     try:
-        _fb_path = '/tmp/firebase-service-account.json'
+        # Render free tier has no Secret Files; /tmp is the standard
+        # writable location and the file is written fresh on every boot.
+        _fb_path = '/tmp/firebase-service-account.json'  # nosec B108
         with open(_fb_path, 'wb') as _fb_file:
             _fb_file.write(base64.b64decode(os.environ['FIREBASE_SERVICE_ACCOUNT_B64']))
         os.environ['FIREBASE_SERVICE_ACCOUNT_PATH'] = _fb_path
     except Exception as _fb_err:
         logging.getLogger(__name__).warning(f'Could not decode FIREBASE_SERVICE_ACCOUNT_B64: {_fb_err}')
 
-# ── App setup ─────────────────────────────────────────────────────────────
+# â”€â”€ App setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app = Flask(__name__)
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '')
 if not SECRET_KEY:
     raise RuntimeError(
         "SECRET_KEY environment variable is not set. Refusing to start with "
-        "a guessable default — set SECRET_KEY in your environment before deploying."
+        "a guessable default â€” set SECRET_KEY in your environment before deploying."
     )
 app.config['SECRET_KEY'] = SECRET_KEY
 
@@ -81,10 +83,10 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
+from services.jwt_config import JWT_SECRET  # fails fast if unset â€” see that module
 JWT_ALGORITHM = 'HS256'
 
-# ── Database ───────────────────────────────────────────────────────────────
+# â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 from pymongo import MongoClient
 import redis as _redis_mod
 
@@ -100,7 +102,7 @@ if MONGO_URI:
     except Exception as e:
         logger.warning(f'MongoDB failed: {e}')
 else:
-    logger.warning('MONGO_URI not set — mock/demo mode')
+    logger.warning('MONGO_URI not set â€” mock/demo mode')
 
 try:
     redis_client = _redis_mod.from_url(REDIS_URL, decode_responses=False)
@@ -113,7 +115,7 @@ except Exception as e:
 app.extensions['mongo_db']     = db
 app.extensions['redis_client'] = redis_client
 
-# ── Background Scheduler (auto-refund for orders with no rider) ──────────
+# â”€â”€ Background Scheduler (auto-refund for orders with no rider) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
     scheduler = BackgroundScheduler(daemon=True)
@@ -161,11 +163,11 @@ try:
     logger.info("Auto-refund scheduler started (checking every 60s)")
     logger.info("Rider retry scheduler started (checking every 60s)")
 except ImportError:
-    logger.warning("APScheduler not installed — auto-refund disabled")
+    logger.warning("APScheduler not installed â€” auto-refund disabled")
 except Exception as e:
     logger.warning(f"Scheduler init failed: {e}")
 
-# ── Middleware ─────────────────────────────────────────────────────────────
+# â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -198,23 +200,23 @@ def api_response(data=None, message='Success', status=200, error=None):
     if error:
         return jsonify({'success': False, 'error': error}), status
     return jsonify({'success': True, 'message': message, 'data': data,
-                    'timestamp': datetime.utcnow().isoformat()}), status
+                    'timestamp': datetime.now(timezone.utc).isoformat()}), status
 
 
-# ── Security headers ───────────────────────────────────────────────────────
+# â”€â”€ Security headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.after_request
 def set_security_headers(response):
     response.headers['X-Content-Type-Options']  = 'nosniff'
     response.headers['X-Frame-Options']          = 'DENY'
     response.headers['X-XSS-Protection']         = '1; mode=block'
     response.headers['Referrer-Policy']           = 'strict-origin-when-cross-origin'
-    # HSTS only on HTTPS responses (Render terminates TLS) — force browsers to
+    # HSTS only on HTTPS responses (Render terminates TLS) â€” force browsers to
     # the secure scheme for the next year.
     if request.is_secure:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
-# ── Health ─────────────────────────────────────────────────────────────────
+# â”€â”€ Health â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/health', methods=['GET'])
 def health_check():
     return api_response({
@@ -225,11 +227,11 @@ def health_check():
         'websocket': 'enabled (Socket.IO)',
         'scheduler': 'running',
         'payment':   'Instamojo',
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
     })
 
 
-# ── Blueprints ─────────────────────────────────────────────────────────────
+# â”€â”€ Blueprints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 from api.v1.auth        import auth_bp
 from api.v1.customers   import customers_bp
 from api.v1.restaurants import restaurants_bp
@@ -280,11 +282,11 @@ def serve_frontend(filename):
         return send_from_directory(FRONTEND_DIR, filename)
     if osp.exists(full + '.html'):
         return send_from_directory(FRONTEND_DIR, filename + '.html')
-    # Not found — let error handler deal with it
+    # Not found â€” let error handler deal with it
     from flask import abort
     abort(404)
 
-# ── Error handlers ─────────────────────────────────────────────────────────
+# â”€â”€ Error handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.errorhandler(404)
 def not_found(e):      return api_response(error='Endpoint not found', status=404)
 @app.errorhandler(405)
@@ -296,9 +298,11 @@ def internal_error(e):
     logger.error(f'Internal server error: {e}')
     return api_response(error='Internal server error', status=500)
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f'Starting Thooku Madurai API on :{port} with SocketIO (threading)')
-    socketio.run(app, host='0.0.0.0', port=port, debug=False,
+    # Binding 0.0.0.0 is required â€” gunicorn/socketio must accept
+    # connections from Render's load balancer, not just loopback.
+    socketio.run(app, host='0.0.0.0', port=port, debug=False,  # nosec B104
                  allow_unsafe_werkzeug=True)

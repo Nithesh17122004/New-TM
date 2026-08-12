@@ -4,3 +4,12 @@ deployment/coturn/turnuserdb.conf
 # Python
 __pycache__/
 *.pyc
+
+# Environment / secrets - NEVER commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.p8
+*.key

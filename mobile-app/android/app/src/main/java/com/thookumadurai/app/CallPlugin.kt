@@ -119,4 +119,27 @@ class CallPlugin : Plugin() {
         data.put("callerRole", callerRole)
         notifyListeners("incomingCallAnswered", data)
     }
+
+    /**
+     * Cold-start safety net: the native "Answer" tap is persisted to
+     * SharedPreferences by IncomingCallActivity before the app launches. On a
+     * cold start the WebView's JS listener may not be ready when the
+     * 'incomingCallAnswered' event fires, so the page pulls the pending
+     * answer here once it is loaded. Returns null when nothing is pending.
+     */
+    @PluginMethod
+    fun takePendingCall(call: PluginCall) {
+        val pending = TokenStore.readPendingCall(context)
+        if (pending == null) {
+            call.resolve()
+            return
+        }
+        TokenStore.clearPendingCall(context)
+        val ret = JSObject()
+        ret.put("callId", pending.callId)
+        ret.put("orderId", pending.orderId)
+        ret.put("callerName", pending.callerName)
+        ret.put("callerRole", pending.callerRole)
+        call.resolve(ret)
+    }
 }

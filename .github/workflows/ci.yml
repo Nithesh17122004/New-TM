@@ -14,6 +14,20 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt pytest
-      - name: Run security unit tests
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r backend/requirements.txt pytest bandit pip-audit
+      - name: Run unit tests
         run: python -m pytest backend/tests -v
+      - name: Syntax check (all backend .py)
+        run: python -m compileall -q backend
+      - name: Bandit security scan (backend, -ll)
+        run: bandit -q -r backend -x backend/tests,backend/test_api.py,backend/test_e2e.py -ll
+      - name: pip-audit dependency scan
+        run: pip-audit -r backend/requirements.txt --progress-spinner off
+      - name: Gitleaks secret scan (changed files only)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_BASE: ${{ github.event.before }}
+          GITLEAKS_HEAD: ${{ github.sha }}

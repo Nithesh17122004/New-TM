@@ -14,6 +14,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import java.net.HttpURLConnection
@@ -112,6 +113,8 @@ class IncomingCallActivity : AppCompatActivity() {
         val callerName = intent.getStringExtra(EXTRA_CALLER_NAME) ?: "Incoming Call"
         val callerRole = intent.getStringExtra(EXTRA_CALLER_ROLE) ?: ""
 
+        checkFullScreenIntentSupport()
+
         findViewById<TextView>(R.id.callerName).text = callerName
         findViewById<TextView>(R.id.callerAvatar).text =
             callerName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
@@ -124,6 +127,10 @@ class IncomingCallActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.answerBtn).setOnClickListener {
             stopRinging()
+            // Persist BEFORE the hand-off so a cold-start WebView (where the
+            // JS listener is not ready yet and the event below would be lost)
+            // can pull it later via CallPlugin.takePendingCall().
+            TokenStore.savePendingCall(applicationContext, callId, orderId, callerName, callerRole)
             // Hand off to MainActivity (the Capacitor WebView). CallPlugin
             // picks this intent up in onNewIntent/onResume and fires a JS
             // event that your existing tracking.html / rider-dashboard.html
@@ -145,6 +152,26 @@ class IncomingCallActivity : AppCompatActivity() {
             stopRinging()
             postDeclineAsync(callId, orderId)
             finish()
+        }
+    }
+
+    /**
+     * Android 14+ (API 34): full-screen notifications — and therefore the
+     * full-screen incoming-call UI when the app is backgrounded — require the
+     * user to have granted the "Full screen" notification permission. Detect
+     * a missing grant and steer the user to the right setting instead of the
+     * call silently never appearing.
+     */
+    private fun checkFullScreenIntentSupport() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            if (nm?.canUseFullScreenIntent() != true) {
+                Toast.makeText(
+                    this,
+                    "Enable notifications > App settings > Full screen for incoming calls",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 

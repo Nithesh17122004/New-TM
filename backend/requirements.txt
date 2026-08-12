@@ -1,16 +1,16 @@
-Flask==3.0.3
-flask-cors==4.0.1
+Flask==3.1.3
+flask-cors==6.0.0
 flask-limiter==3.8.0
-PyJWT==2.8.0
+PyJWT==2.13.0
 bcrypt==4.1.3
 pymongo==4.7.3
 redis==5.0.7
 gunicorn==22.0.0
-python-dotenv==1.0.1
-requests==2.32.3
-sentry-sdk[flask]==2.7.1
+python-dotenv==1.2.2
+requests==2.33.0
+sentry-sdk[flask]==2.8.0
 cloudinary==1.40.0
-Pillow==12.2.0
+Pillow==12.3.0
 flask-socketio==5.3.6
 simple-websocket==1.0.0
 APScheduler==3.10.4
@@ -22,5 +22,11 @@ google-auth==2.37.0
 google-auth-oauthlib==1.2.1
 firebase-admin==6.5.0
 boto3==1.34.144
-# apns2 — uncomment when iOS VoIP push is needed (conflicts with PyJWT v2)
+# iOS VoIP push (PushKit/CallKit): apns2==0.7.2 is the latest release but is
+# UNUSABLE on Python 3.10+ — its 'hyper' HTTP/2 dependency does
+# `from collections import Iterable`, removed in 3.10 (verified: import fails).
+# The app already handles its absence gracefully (push_calls.py _apns() logs
+# "iOS call wake disabled" and Android/FCM keeps working). When iOS VoIP push
+# becomes a requirement, replace it with a maintained APNs client
+# (e.g. aioapns or h2-based implementation) and set APNS_VOIP_CERT_PATH.
 # apns2==0.7.2

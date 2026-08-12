@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: ../docker/Dockerfile.backend
+      dockerfile: ../deployment/Dockerfile.backend
     container_name: thooku_backend
     env_file: .env
     ports:
@@ -23,7 +23,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      dockerfile: ../deployment/Dockerfile.frontend
     container_name: thooku_frontend
     ports:
       - "80:80"

@@ -88,9 +88,17 @@
     return false;
   };
 
-  ThookuCalls.addListener('incomingCallAnswered', function (data) {
-    // data: { callId, orderId, callerName, callerRole }
-    fetch(API_BASE + '/push/pending-offer/' + encodeURIComponent(data.callId), {
+  // Dedupe: on cold start the native layer may deliver the answer BOTH via
+  // the listener (if the WebView finished loading in time) AND via
+  // takePendingCall() — run the accept flow exactly once per callId.
+  var handledCallIds = {};
+
+  function handleNativeAnswered(data) {
+    var callId = data && data.callId;
+    if (!callId) return;
+    if (handledCallIds[callId]) return; // already accepted (or attempted)
+    handledCallIds[callId] = Date.now();
+    fetch(API_BASE + '/push/pending-offer/' + encodeURIComponent(callId), {
       headers: authHeaders()
     })
       .then(function (r) { return r.json(); })
@@ -110,5 +118,18 @@
         window.__thookuAcceptNativeCall(res.sdp, res.orderId || data.orderId, data.callerName);
       })
       .catch(function (e) { console.warn('Could not fetch pending offer', e); });
-  });
+  }
+
+  // Warm path: native dispatched the event after the WebView was ready.
+  ThookuCalls.addListener('incomingCallAnswered', handleNativeAnswered);
+
+  // Cold-start path: the app was launched from the native Answer button and
+  // the listener above may have been registered too late for the event.
+  // Pull any persisted pending answer and deliver it through the same flow.
+  if (ThookuCalls.takePendingCall) {
+    ThookuCalls.takePendingCall().then(function (res) {
+      var pending = (res && res.value) || res;
+      if (pending && pending.callId) handleNativeAnswered(pending);
+    }).catch(function () { /* nothing pending \u2014 normal */ });
+  }
 })();
