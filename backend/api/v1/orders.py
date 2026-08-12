@@ -988,29 +988,32 @@ def process_auto_refunds():
         amount = float(order.get("total", 0))
 
         if payment_status in ("paid", "completed"):
-            # Initiate refund via Instamojo
-            payment_id = order.get("instamojo_payment_id", "")
+            # Initiate refund via Razorpay
+            payment_id = (order.get("razorpay_payment_id")
+                          or order.get("instamojo_payment_id", ""))
             try:
                 from api.v1.payments import _use_mock_mode
                 is_mock = _use_mock_mode() or (payment_id or "").startswith("pay_mock")
                 if not is_mock and payment_id:
                     import requests as _req
                     resp = _req.post(
-                        "https://www.instamojo.com/api/1.1/refunds/",
-                        headers={
-                            "X-Api-Key": os.environ.get("INSTAMOJO_API_KEY", ""),
-                            "X-Auth-Token": os.environ.get("INSTAMOJO_AUTH_TOKEN", ""),
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
+                        f"https://api.razorpay.com/v1/payments/{payment_id}/refund",
+                        auth=(
+                            os.environ.get("RAZORPAY_KEY_ID", ""),
+                            os.environ.get("RAZORPAY_KEY_SECRET", ""),
+                        ),
                         data={
-                            "payment_id": payment_id,
-                            "type": "QFL",
-                            "body": "Auto-refund: No rider assigned within 30 minutes",
+                            "notes[reason]": "Auto-refund: No rider assigned within 30 minutes",
                         },
                         timeout=15,
                     )
                     refund_data = resp.json()
-                    refund_id = refund_data.get("refund", {}).get("id", f"auto_ref_{order_id}")
+                    if resp.status_code == 200:
+                        refund_id = refund_data.get("id", f"auto_ref_{order_id}")
+                    else:
+                        error = refund_data.get("error", {}).get("description", "Razorpay refund failed")
+                        logger.error("Auto-refund API error for order %s: %s", order_id, error)
+                        refund_id = f"auto_ref_failed_{order_id}"
                 else:
                     refund_id = f"auto_refund_mock_{order_id}"
 

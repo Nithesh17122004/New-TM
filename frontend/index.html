@@ -1792,34 +1792,40 @@ async function placeOrder() {
       return;
     }
 
-    // Instamojo: open payment page in new tab/window
-    if (pd.longurl) {
-      showToast('Redirecting to Instamojo payment...', 'warning');
-      // Open Instamojo payment window
-      const payWindow = window.open(pd.longurl, '_blank', 'width=500,height=700');
-      if (!payWindow) {
-        // Fallback: redirect current page
-        window.location.href = pd.longurl;
+    // Razorpay: open the hosted Checkout with the server-created order
+    if (pd.razorpay_order_id) {
+      if (typeof window.Razorpay === 'undefined') {
+        await new Promise(function (resolve, reject) {
+          const s = document.createElement('script');
+          s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          s.onload = resolve; s.onerror = reject;
+          document.head.appendChild(s);
+        });
       }
-      // Poll for payment completion
-      const pollInterval = setInterval(async () => {
-        try {
-          const checkRes = await fetch(`${API_BASE}/orders/${orderId}`, {
-            headers: { Authorization: `Bearer ${state.user.token}` }
+      const rzp = new Razorpay({
+        key: pd.razorpay_key_id,
+        amount: pd.amount_paise,
+        currency: pd.currency || 'INR',
+        name: 'Thooku Madurai',
+        description: 'Order ' + pd.order_id,
+        order_id: pd.razorpay_order_id,
+        prefill: { contact: state.user.phone || '', email: state.user.email || '' },
+        handler: function (r) {
+          verifyPayment({
+            order_id: orderId,
+            razorpay_order_id: r.razorpay_order_id,
+            razorpay_payment_id: r.razorpay_payment_id,
+            razorpay_signature: r.razorpay_signature,
+            status: 'paid'
           });
-          const checkData = await checkRes.json();
-          const order = checkData.data || {};
-          if (order.payment_status === 'paid' || order.payment_status === 'completed') {
-            clearInterval(pollInterval);
-            verifyPayment({
-              payment_request_id: pd.payment_request_id,
-              payment_id: order.instamojo_payment_id || '',
-              order_id: orderId,
-              status: 'paid'
-            });
+        },
+        modal: {
+          ondismiss: function () {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock"></i> Pay & Place Order — <span id="checkoutTotal">₹' + total + '</span>'; }
           }
-        } catch(e) { /* poll silently */ }
-      }, 3000);
+        }
+      });
+      rzp.open();
     } else {
       showToast('Payment setup failed - no payment URL', 'error');
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock"></i> Pay & Place Order — <span id="checkoutTotal">₹' + total + '</span>'; }

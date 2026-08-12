@@ -230,33 +230,29 @@ def test_call_rider_forbidden_for_non_participant(client, fake_db):
 
 def test_payment_mock_defaults_to_mock_without_keys(monkeypatch):
     monkeypatch.setenv('PAYMENT_MOCK_MODE', '')
-    payments.INSTAMOJO_API_KEY = ''
-    payments.INSTAMOJO_AUTH_TOKEN = ''
-    payments.INSTAMOJO_SALT = ''
+    payments.RAZORPAY_KEY_ID = ''
+    payments.RAZORPAY_KEY_SECRET = ''
     assert payments._use_mock_mode() is True
 
 
 def test_payment_mock_disabled_when_keys_present(monkeypatch):
     monkeypatch.setenv('PAYMENT_MOCK_MODE', '')
-    payments.INSTAMOJO_API_KEY = 'k'
-    payments.INSTAMOJO_AUTH_TOKEN = 't'
-    payments.INSTAMOJO_SALT = 's'
+    payments.RAZORPAY_KEY_ID = 'k'
+    payments.RAZORPAY_KEY_SECRET = 's'
     assert payments._use_mock_mode() is False
 
 
 def test_payment_mock_forced_on(monkeypatch):
     monkeypatch.setenv('PAYMENT_MOCK_MODE', '1')
-    payments.INSTAMOJO_API_KEY = 'k'
-    payments.INSTAMOJO_AUTH_TOKEN = 't'
-    payments.INSTAMOJO_SALT = 's'
+    payments.RAZORPAY_KEY_ID = 'k'
+    payments.RAZORPAY_KEY_SECRET = 's'
     assert payments._use_mock_mode() is True
 
 
 def test_payment_mock_forced_off_even_without_keys(monkeypatch):
     monkeypatch.setenv('PAYMENT_MOCK_MODE', '0')
-    payments.INSTAMOJO_API_KEY = ''
-    payments.INSTAMOJO_AUTH_TOKEN = ''
-    payments.INSTAMOJO_SALT = ''
+    payments.RAZORPAY_KEY_ID = ''
+    payments.RAZORPAY_KEY_SECRET = ''
     assert payments._use_mock_mode() is False
 
 

@@ -1,5 +1,5 @@
 # ============================================================
-# THOOKU MADURAI — API: Payments (Instamojo)
+# THOOKU MADURAI — API: Payments (Razorpay)
 # /api/v1/payments
 # ============================================================
 
@@ -7,9 +7,7 @@ import hmac
 import hashlib
 import os
 import uuid
-import json
 import logging
-import time
 
 import jwt
 import requests as req
@@ -21,13 +19,12 @@ logger = logging.getLogger(__name__)
 
 # Reuse the app-level require_auth from app.py (imported at blueprint registration)
 from services.jwt_config import JWT_SECRET  # fails fast if unset — see that module
-INSTAMOJO_API_KEY = os.environ.get("INSTAMOJO_API_KEY", "")
-INSTAMOJO_AUTH_TOKEN = os.environ.get("INSTAMOJO_AUTH_TOKEN", "")
-INSTAMOJO_SALT = os.environ.get("INSTAMOJO_SALT", "")
-INSTAMOJO_WEBHOOK_SECRET = os.environ.get("INSTAMOJO_WEBHOOK_SECRET", "")
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 FLASK_ENV = os.environ.get("FLASK_ENV", "development").lower()
 
-INSTAMOJO_API = "https://www.instamojo.com/api/1.1/"
+RAZORPAY_API = "https://api.razorpay.com/v1/"
 PAYMENT_MOCK_MODE = os.environ.get("PAYMENT_MOCK_MODE", "").lower() in ("1", "true", "yes")
 
 
@@ -36,7 +33,7 @@ def _use_mock_mode() -> bool:
 
     - PAYMENT_MOCK_MODE=1/true/yes  -> always mock
     - PAYMENT_MOCK_MODE=0/false/no  -> always real (fails loudly if keys missing)
-    - unset                          -> mock only while no real Instamojo
+    - unset                          -> mock only while no real Razorpay
                                         credentials are configured, so enabling
                                         real payments is automatic once the
                                         keys are set.
@@ -46,7 +43,7 @@ def _use_mock_mode() -> bool:
         return True
     if env_mode in ("0", "false", "no"):
         return False
-    return not (INSTAMOJO_API_KEY and INSTAMOJO_AUTH_TOKEN and INSTAMOJO_SALT)
+    return not (RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
 
 
 def get_db():
@@ -74,71 +71,67 @@ def _update_order_payment(db, order_id: str, payment_status: str, payment_id: st
         return
     update = {"payment_status": payment_status}
     if payment_id:
+        # "instamojo_payment_id" is kept as a legacy mirror so orders created
+        # before the Razorpay switch and older app builds still work.
+        update["razorpay_payment_id"] = payment_id
         update["instamojo_payment_id"] = payment_id
     db.orders.update_one({"_id": order_id}, {"$set": update})
 
 
-# ── Instamojo Helpers ───────────────────────────────────────────────────────
+# ── Razorpay Helpers ─────────────────────────────────────────────────────────
 
-def _instamojo_headers():
-    return {
-        "X-Api-Key": INSTAMOJO_API_KEY,
-        "X-Auth-Token": INSTAMOJO_AUTH_TOKEN,
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
+def _razorpay_auth():
+    return (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)
 
 
-def _create_instamojo_request(order_id: str, amount: float, customer_phone: str, customer_email: str = "") -> dict | None:
-    """Create a payment request on Instamojo and return the response."""
+def _create_razorpay_order(order_id: str, amount: float) -> dict | None:
+    """Create a Razorpay order (amount in paise). Returns the order dict."""
     try:
-        payload = {
-            "purpose": f"Thooku Madurai Order {order_id}",
-            "amount": f"{amount:.2f}",
-            "phone": customer_phone,
-            "buyer_name": f"Customer {customer_phone[-4:]}",
-            "email": customer_email or f"customer{customer_phone}@thooku.xyz",
-            "send_email": False,
-            "send_sms": False,
-            "allow_repeated_payments": False,
-            "redirect_url": "",  # handled via webhook
-            "webhook_url": f"{request.host_url}api/v1/payments/webhook",
-        }
         resp = req.post(
-            f"{INSTAMOJO_API}payment-requests/",
-            headers=_instamojo_headers(),
-            data=payload,
+            f"{RAZORPAY_API}orders",
+            auth=_razorpay_auth(),
+            data={
+                "amount": f"{round(float(amount) * 100)}",
+                "currency": "INR",
+                "receipt": order_id,
+                "payment_capture": 1,
+            },
             timeout=15,
         )
         data = resp.json()
-        if resp.status_code == 201 and data.get("success"):
-            pr = data.get("payment_request", {})
-            return {
-                "id": pr.get("id"),
-                "longurl": pr.get("longurl"),
-                "shorturl": pr.get("shorturl"),
-                "status": pr.get("status"),
-            }
-        logger.warning("Instamojo create failed: %s", data.get("message", resp.text[:200]))
+        if resp.status_code == 200 and data.get("id"):
+            return data
+        logger.warning("Razorpay order create failed: %s", data.get("error", resp.text[:200]))
         return None
     except Exception as e:
-        logger.error("Instamojo request error: %s", e)
+        logger.error("Razorpay order request error: %s", e)
         return None
 
 
-def _verify_instamojo_webhook(data: dict) -> bool:
-    """Verify Instamojo webhook signature using the salt."""
-    mac_provided = data.get("mac", "")
-    if not mac_provided:
+def _verify_razorpay_signature(order_id: str, payment_id: str, signature: str) -> bool:
+    """Standard Razorpay signature check: HMAC-SHA256 of
+    '<order_id>|<payment_id>' with the key secret."""
+    if not signature:
         return False
-    fields = [
-        "payment_id", "payment_request_id", "buyer_name", "buyer_phone",
-        "buyer_email", "currency", "amount", "purpose", "status"
-    ]
-    mac_string = "|".join(str(data.get(f, "")) for f in fields)
-    mac_expected = hmac.new(
-        INSTAMOJO_SALT.encode(), mac_string.encode(), hashlib.sha1
+    mac = hmac.new(
+        RAZORPAY_KEY_SECRET.encode(),
+        f"{order_id}|{payment_id}".encode(),
+        hashlib.sha256,
     ).hexdigest()
-    return hmac.compare_digest(mac_expected, mac_provided)
+    return hmac.compare_digest(mac, signature)
+
+
+def _verify_razorpay_webhook(raw_body: bytes, signature: str) -> bool:
+    """Razorpay webhook signature: HMAC-SHA256 of the raw request body with
+    the webhook secret."""
+    if not signature or not RAZORPAY_WEBHOOK_SECRET:
+        return False
+    mac = hmac.new(
+        RAZORPAY_WEBHOOK_SECRET.encode(),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(mac, signature)
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -146,12 +139,13 @@ def _verify_instamojo_webhook(data: dict) -> bool:
 @payments_bp.route("/create-order", methods=["POST"])
 @require_auth_decorator
 def create_payment_order():
-    """Create a payment request for the order.
+    """Create a Razorpay order for the order.
 
     Follows _use_mock_mode(): a mock payment is returned only while no real
-    Instamojo credentials are configured (or PAYMENT_MOCK_MODE forces mock).
-    Once INSTAMOJO_API_KEY + INSTAMOJO_AUTH_TOKEN + INSTAMOJO_SALT are set,
-    this calls the real Instamojo API and returns the actual payment URL.
+    Razorpay credentials are configured (or PAYMENT_MOCK_MODE forces mock).
+    Once RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET are set, this creates a real
+    Razorpay order and returns the order id + the public key id for the
+    frontend Razorpay Checkout.
 
     The amount is taken from the order document (never trusted from the
     client body), so a customer cannot pay less than the billed total.
@@ -188,28 +182,30 @@ def create_payment_order():
             },
         }), 200
 
-    customer_phone = ""
-    customer_email = ""
-    if order:
-        customer_phone = str(order.get("customer_phone", ""))
-    if not customer_phone:
-        customer_phone = str(request.user.get("phone", "") or request.user.get("email", ""))
-    customer_email = request.user.get("email", "") or ""
-
-    payment = _create_instamojo_request(order_id, amount, customer_phone, customer_email)
-    if payment is None or not payment.get("id"):
+    rzp_order = _create_razorpay_order(order_id, amount)
+    if rzp_order is None:
         return jsonify({
             "success": False,
-            "error": "Instamojo payment request creation failed - check INSTAMOJO_API_KEY / INSTAMOJO_AUTH_TOKEN / INSTAMOJO_SALT",
+            "error": "Razorpay order creation failed - check RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET",
         }), 502
+
+    # Persist the mapping (Razorpay order id -> our order) so the webhook can
+    # resolve payment events back to this order.
+    if db is not None:
+        db.orders.update_one(
+            {"_id": order_id},
+            {"$set": {"razorpay_order_id": rzp_order.get("id")}},
+        )
 
     return jsonify({
         "success": True,
         "data": {
-            "payment_request_id": payment["id"],
-            "longurl": payment.get("longurl", ""),
-            "shorturl": payment.get("shorturl", ""),
+            "payment_request_id": rzp_order.get("id"),
+            "razorpay_order_id": rzp_order.get("id"),
+            "razorpay_key_id": RAZORPAY_KEY_ID,
             "amount": amount,
+            "amount_paise": rzp_order.get("amount", round(amount * 100)),
+            "currency": rzp_order.get("currency", "INR"),
             "order_id": order_id,
             "mock_mode": False,
         },
@@ -219,7 +215,7 @@ def create_payment_order():
 @payments_bp.route("/verify", methods=["POST"])
 @require_auth_decorator
 def verify_payment():
-    """Verify payment after webhook or mock completion."""
+    """Verify payment after Razorpay Checkout success or mock completion."""
     data = request.get_json(silent=True) or {}
     order_id = data.get("order_id", "")
     payment_request_id = data.get("payment_request_id", "")
@@ -229,11 +225,11 @@ def verify_payment():
     if not order_id:
         return jsonify({"success": False, "error": "order_id required"}), 400
 
-    is_mock = (payment_request_id or "").startswith("mock_") or data.get("mock_mode")
-
     db = get_db()
     if db is not None and db.orders.find_one({"_id": order_id}) is None:
         return jsonify({"success": False, "error": "Order not found"}), 404
+
+    is_mock = (payment_request_id or "").startswith("mock_") or data.get("mock_mode")
 
     if is_mock:
         _update_order_payment(db, order_id, "paid", payment_id or f"pay_mock_{uuid.uuid4().hex[:12]}")
@@ -243,67 +239,71 @@ def verify_payment():
             "data": {"order_id": order_id, "status": "paid"},
         }), 200
 
-    # Verify via Instamojo API
-    if payment_request_id:
-        try:
-            resp = req.get(
-                f"{INSTAMOJO_API}payment-requests/{payment_request_id}/",
-                headers=_instamojo_headers(),
-                timeout=10,
-            )
-            pr_data = resp.json()
-            if pr_data.get("success"):
-                pr = pr_data.get("payment_request", {})
-                pr_status = pr.get("status", "")
-                if pr_status == "Completed":
-                    payments = pr.get("payments", [])
-                    pid = payments[0].get("payment_id", payment_id) if payments else payment_id
-                    _update_order_payment(db, order_id, "paid", pid)
-                    return jsonify({
-                        "success": True,
-                        "message": "Payment verified!",
-                        "data": {"order_id": order_id, "status": "paid", "payment_id": pid},
-                    }), 200
-        except Exception as e:
-            logger.warning("Instamojo verify error: %s", e)
+    # Real Razorpay Checkout: verify the payment signature returned by the SDK.
+    rzp_order_id = data.get("razorpay_order_id", "")
+    rzp_payment_id = data.get("razorpay_payment_id", "")
+    rzp_signature = data.get("razorpay_signature", "")
 
-    return jsonify({"success": False, "error": "Payment not completed yet"}), 400
+    if not rzp_order_id or not rzp_payment_id or not rzp_signature:
+        return jsonify({"success": False, "error": "razorpay_order_id / razorpay_payment_id / razorpay_signature required"}), 400
+
+    if not _verify_razorpay_signature(rzp_order_id, rzp_payment_id, rzp_signature):
+        logger.warning("Razorpay signature verification failed for order %s", order_id)
+        return jsonify({"success": False, "error": "Payment signature verification failed"}), 400
+
+    _update_order_payment(db, order_id, "paid", rzp_payment_id)
+    return jsonify({
+        "success": True,
+        "message": "Payment verified!",
+        "data": {"order_id": order_id, "status": "paid", "payment_id": rzp_payment_id},
+    }), 200
 
 
-def _process_payment_webhook(data: dict, db) -> tuple:
-    """Validate + apply an Instamojo webhook. Returns (http_status, body).
+def _process_payment_webhook(raw_body: bytes, signature: str, data: dict, db) -> tuple:
+    """Validate + apply a Razorpay webhook. Returns (http_status, body).
 
     Guards applied in order:
-      1. Instamojo HMAC signature (salt)
+      1. Razorpay HMAC-SHA256 signature (webhook secret, over the raw body)
       2. unknown order -> 400, never paid
       3. duplicate webhook / already-paid order -> idempotent 200
       4. paid amount must match the order total -> 400 otherwise
     """
-    if not _verify_instamojo_webhook(data):
+    if not _verify_razorpay_webhook(raw_body, signature):
         logger.warning("Webhook signature verification failed")
         return 400, {"status": "error", "message": "Invalid signature"}
 
-    status = data.get("status", "")
-    payment_id = data.get("payment_id", "")
-    purpose = data.get("purpose", "")
+    event = data.get("event", "")
+    entity = (data.get("payload") or {}).get("payment") or {}
+    payment = entity.get("entity") or {}
 
-    # Extract order_id from purpose field: "Thooku Madurai Order TM-XXXXXX"
-    order_id = ""
-    if "Order " in purpose:
-        order_id = purpose.split("Order ")[-1].strip()
-    if not order_id:
-        order_id = data.get("order_id", "")
+    payment_id = payment.get("id", "")
+    order_id = payment.get("order_id", "")
+    amount_paise = payment.get("amount", 0)
+    payment_status = payment.get("status", "")
 
-    if status != "Credit" or not order_id:
+    # payment.authorized / payment.captured = money moved.
+    is_credit = event in ("payment.captured", "payment.authorized") and payment_status in ("captured", "authorized")
+
+    if not is_credit or not order_id:
         if order_id:
-            _update_order_payment(db, order_id, "failed")
+            # Order id may be a Razorpay order id — only mark the app order
+            # failed when we can resolve it.
+            resolved = db.orders.find_one({"_id": order_id}) if db else None
+            if resolved is None:
+                resolved = db.orders.find_one({"razorpay_order_id": order_id}) if db else None
+            if resolved is not None:
+                _update_order_payment(db, resolved["_id"], "failed")
         return 200, {"status": "ok"}
 
     if db is None:
-        # Nothing to verify against — acknowledge so Instamojo stops retrying.
+        # Nothing to verify against — acknowledge so Razorpay stops retrying.
         return 200, {"status": "ok"}
 
+    # The payment entity's "order_id" is the RAZORPAY order id — resolve it
+    # back to our order via the mapping stored at create-order time.
     order = db.orders.find_one({"_id": order_id})
+    if order is None:
+        order = db.orders.find_one({"razorpay_order_id": order_id})
     if order is None:
         logger.warning("Webhook for unknown order %s", order_id)
         return 400, {"status": "error", "message": "Unknown order"}
@@ -313,36 +313,38 @@ def _process_payment_webhook(data: dict, db) -> tuple:
         return 200, {"status": "ok"}
 
     try:
-        paid_amount = float(data.get("amount", 0) or 0)
-        order_total = float(order.get("total", 0) or 0)
+        paid_paise = float(amount_paise or 0)
+        order_paise = round(float(order.get("total", 0) or 0) * 100)
     except (TypeError, ValueError):
-        paid_amount = order_total = 0.0
-    if abs(paid_amount - order_total) > 0.01:
+        paid_paise = order_paise = 0.0
+    if abs(paid_paise - order_paise) > 0.01:
         logger.error(
-            "Webhook amount mismatch for order %s (paid %.2f, expected %.2f)",
-            order_id, paid_amount, order_total,
+            "Webhook amount mismatch for order %s (paid %.2f paise, expected %d paise)",
+            order_id, paid_paise, order_paise,
         )
         return 400, {"status": "error", "message": "Amount mismatch"}
 
-    _update_order_payment(db, order_id, "paid", payment_id)
-    logger.info("Payment webhook: order %s paid (payment %s)", order_id, payment_id)
+    _update_order_payment(db, order["_id"], "paid", payment_id)
+    logger.info("Payment webhook: order %s paid (payment %s)", order["_id"], payment_id)
     return 200, {"status": "ok"}
 
 
 @payments_bp.route("/webhook", methods=["POST"])
 def payment_webhook():
-    """Handle Instamojo webhook callback (signature-verified)."""
-    data = request.form.to_dict() or request.get_json(silent=True) or {}
-    code, body = _process_payment_webhook(data, get_db())
+    """Handle Razorpay webhook callback (signature-verified, raw body)."""
+    raw_body = request.get_data()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    data = request.get_json(silent=True) or {}
+    code, body = _process_payment_webhook(raw_body, signature, data, get_db())
     return jsonify(body), code
 
 
 @payments_bp.route("/refund", methods=["POST"])
 @require_auth_decorator
 def initiate_refund():
-    """Initiate a refund via Instamojo or mock."""
+    """Initiate a refund via Razorpay or mock."""
     data = request.get_json(silent=True) or {}
-    payment_id = data.get("payment_id", data.get("instamojo_payment_id", ""))
+    payment_id = data.get("payment_id", data.get("razorpay_payment_id", data.get("instamojo_payment_id", "")))
     amount = data.get("amount", 0)
     reason = data.get("reason", "order_cancelled_no_rider")
     order_id = data.get("order_id", "")
@@ -354,9 +356,9 @@ def initiate_refund():
     if not payment_id and order_id:
         db = get_db()
         if db is not None:
-            order = db.orders.find_one({"_id": order_id}, {"instamojo_payment_id": 1})
+            order = db.orders.find_one({"_id": order_id}, {"razorpay_payment_id": 1, "instamojo_payment_id": 1})
             if order:
-                payment_id = order.get("instamojo_payment_id", "")
+                payment_id = order.get("razorpay_payment_id") or order.get("instamojo_payment_id", "")
 
     is_mock = (payment_id or "").startswith("pay_mock") or _use_mock_mode()
 
@@ -369,26 +371,24 @@ def initiate_refund():
         }), 200
 
     try:
+        payload = {"notes[reason]": reason}
+        if amount:
+            payload["amount"] = f"{round(float(amount) * 100)}"
         resp = req.post(
-            f"{INSTAMOJO_API}refunds/",
-            headers=_instamojo_headers(),
-            data={
-                "payment_id": payment_id,
-                "type": "QFL",
-                "body": reason,
-                "amount": f"{float(amount):.2f}" if amount else "",
-            },
+            f"{RAZORPAY_API}payments/{payment_id}/refund",
+            auth=_razorpay_auth(),
+            data=payload,
             timeout=15,
         )
         ref_data = resp.json()
-        if resp.status_code == 201:
-            refund_id = ref_data.get("refund", {}).get("id", f"ref_{uuid.uuid4().hex[:12]}")
+        if resp.status_code == 200:
+            refund_id = ref_data.get("id", f"ref_{uuid.uuid4().hex[:12]}")
             return jsonify({
                 "success": True,
                 "message": "Refund initiated",
                 "data": {"refund_id": refund_id, "amount": amount, "status": "processing"},
             }), 200
-        return jsonify({"success": False, "error": ref_data.get("message", "Refund failed")}), 500
+        return jsonify({"success": False, "error": ref_data.get("error", {}).get("description", "Refund failed")}), 500
     except Exception as e:
         logger.error("Refund error: %s", e)
         return jsonify({"success": False, "error": str(e)}), 500

@@ -226,7 +226,7 @@ def health_check():
         'cache':     'connected' if redis_client is not None else 'disconnected',
         'websocket': 'enabled (Socket.IO)',
         'scheduler': 'running',
-        'payment':   'Instamojo',
+        'payment':   'Razorpay',
         'timestamp': datetime.now(timezone.utc).isoformat(),
     })
 
